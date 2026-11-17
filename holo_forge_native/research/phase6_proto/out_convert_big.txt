@@ -1,0 +1,6 @@
+OpenSubdiv 30500
+
+=== 7. Convert: graded per-face merge vs per-patch faces, isolation 4..10 (Gregory end caps -> bicubic) ===
+
+-- ico L3 split (3840 quads, 1922 EVs): 3840 ptex faces
+done

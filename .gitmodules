@@ -1,0 +1,3 @@
+[submodule "holo_forge_native/thirdparty/godot-cpp"]
+	path = holo_forge_native/thirdparty/godot-cpp
+	url = https://github.com/godotengine/godot-cpp

@@ -1,0 +1,1138 @@
+[gd_scene format=3 uid="uid://cx8idrvulum01"]
+
+[ext_resource type="Script" uid="uid://bc5tbgbsdsgea" path="res://addons/holo_forge/nodes/cad_part.gd" id="1_dehm8"]
+[ext_resource type="Script" uid="uid://8mhf2tnq2ky4" path="res://addons/holo_forge/core/feature.gd" id="2_0jstq"]
+[ext_resource type="Script" uid="uid://br7rf7tad1yge" path="res://addons/holo_forge/core/document.gd" id="3_d5cfa"]
+[ext_resource type="ArrayMesh" uid="uid://cj0jhw2u5anbq" path="res://tests/holo_forge/assembly_editor_test_forge/LeverPart_body2_67979156c698.res" id="4_b63kg"]
+[ext_resource type="ArrayMesh" uid="uid://buh8bogh2usnn" path="res://tests/holo_forge/assembly_editor_test_forge/LeverPart_body1_962c53768bfa.res" id="5_2iqmu"]
+[ext_resource type="ArrayMesh" uid="uid://ij52xwtdyryo" path="res://tests/holo_forge/assembly_editor_test_forge/LeverPart_body3_f6b4517c70e2.res" id="6_atcrv"]
+[ext_resource type="ArrayMesh" uid="uid://cr62d5pmg544s" path="res://tests/holo_forge/assembly_editor_test_forge/GearsPart_body2_833dce774639.res" id="7_7xs7n"]
+[ext_resource type="ArrayMesh" uid="uid://dxrgkpcvd154p" path="res://tests/holo_forge/assembly_editor_test_forge/GearsPart_body3_5a417e8e67ad.res" id="8_2d7oe"]
+[ext_resource type="ArrayMesh" uid="uid://diy0qmfr7uuls" path="res://tests/holo_forge/assembly_editor_test_forge/GearsPart_body1_53ee7b319d6c.res" id="9_v3f67"]
+[ext_resource type="ArrayMesh" uid="uid://v3mk82fncg4i" path="res://tests/holo_forge/assembly_editor_test_forge/GearsPart_body4_2e9680deb548.res" id="10_u8usc"]
+[ext_resource type="ArrayMesh" uid="uid://bshi3f7fwydbq" path="res://tests/holo_forge/assembly_editor_test_forge/SliderPart_body3_3696c50921b5.res" id="11_wed8m"]
+[ext_resource type="ArrayMesh" uid="uid://dvyl7wbg6aa6d" path="res://tests/holo_forge/assembly_editor_test_forge/SliderPart_body1_ae108efe875e.res" id="12_eqwbd"]
+[ext_resource type="ArrayMesh" uid="uid://djy1lsuc2kivb" path="res://tests/holo_forge/assembly_editor_test_forge/SliderPart_body2_0e79a4465ff4.res" id="13_oisap"]
+
+[sub_resource type="Resource" id="Resource_n14uy"]
+script = ExtResource("2_0jstq")
+id = "f1"
+type = "sketch"
+label = "Sketch1"
+options = {
+"constraints": [],
+"entities": [{
+"fixed": true,
+"id": 1,
+"origin": true,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"fixed": false,
+"id": 2,
+"type": "point",
+"x": -0.05,
+"y": -0.05
+}, {
+"fixed": false,
+"id": 3,
+"type": "point",
+"x": 0.05,
+"y": -0.05
+}, {
+"fixed": false,
+"id": 4,
+"type": "point",
+"x": 0.05,
+"y": 0.05
+}, {
+"fixed": false,
+"id": 5,
+"type": "point",
+"x": -0.05,
+"y": 0.05
+}, {
+"centerline": false,
+"construction": false,
+"id": 6,
+"p1": 2,
+"p2": 3,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 7,
+"p1": 3,
+"p2": 4,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 8,
+"p1": 4,
+"p2": 5,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 9,
+"p1": 5,
+"p2": 2,
+"type": "line"
+}, {
+"fixed": false,
+"id": 10,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"c": 10,
+"construction": false,
+"id": 11,
+"r": 0.005,
+"type": "circle"
+}],
+"next_id": 12,
+"plane": {
+"origin": Vector3(0, 0, 0),
+"x": Vector3(1, 0, 0),
+"y": Vector3(0, 1, 0)
+},
+"plane_ref": "xy",
+"visible": true
+}
+
+[sub_resource type="Resource" id="Resource_i4xu3"]
+script = ExtResource("2_0jstq")
+id = "f2"
+type = "extrude"
+label = "Extrude1"
+inputs = {
+"distance": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d1"
+},
+"start_offset": {
+"expression": "0.0 mm",
+"kind": "length",
+"name": "d2"
+}
+}
+options = {
+"body_id": "body1",
+"operation": "new_body",
+"profiles": [{
+"kind": "profile",
+"point": Vector2(0.030000001, 0.030000001),
+"sketch": "f1"
+}],
+"start": "offset"
+}
+
+[sub_resource type="Resource" id="Resource_xcq7n"]
+script = ExtResource("2_0jstq")
+id = "f3"
+type = "sketch"
+label = "Sketch2"
+options = {
+"constraints": [],
+"entities": [{
+"fixed": true,
+"id": 1,
+"origin": true,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"fixed": false,
+"id": 2,
+"type": "point",
+"x": -0.010000001,
+"y": -0.010000001
+}, {
+"fixed": false,
+"id": 3,
+"type": "point",
+"x": 0.095000006,
+"y": -0.010000001
+}, {
+"fixed": false,
+"id": 4,
+"type": "point",
+"x": 0.095000006,
+"y": 0.010000001
+}, {
+"fixed": false,
+"id": 5,
+"type": "point",
+"x": -0.010000001,
+"y": 0.010000001
+}, {
+"centerline": false,
+"construction": false,
+"id": 6,
+"p1": 2,
+"p2": 3,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 7,
+"p1": 3,
+"p2": 4,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 8,
+"p1": 4,
+"p2": 5,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 9,
+"p1": 5,
+"p2": 2,
+"type": "line"
+}, {
+"fixed": false,
+"id": 10,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"c": 10,
+"construction": false,
+"id": 11,
+"r": 0.005,
+"type": "circle"
+}],
+"next_id": 12,
+"plane": {
+"origin": Vector3(0, 0, 0),
+"x": Vector3(1, 0, 0),
+"y": Vector3(0, 1, 0)
+},
+"plane_ref": "xy",
+"visible": true
+}
+
+[sub_resource type="Resource" id="Resource_jrhnc"]
+script = ExtResource("2_0jstq")
+id = "f4"
+type = "extrude"
+label = "Extrude2"
+inputs = {
+"distance": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d3"
+},
+"start_offset": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d4"
+}
+}
+options = {
+"body_id": "body2",
+"component_id": "comp1",
+"operation": "new_component",
+"profiles": [{
+"kind": "profile",
+"point": Vector2(0.0425, 0),
+"sketch": "f3"
+}],
+"start": "offset"
+}
+
+[sub_resource type="Resource" id="Resource_ccpql"]
+script = ExtResource("2_0jstq")
+id = "f5"
+type = "surface"
+label = "SurfaceLoft1"
+options = {
+"body_id": "body3",
+"centerline": [],
+"closed": false,
+"method": "loft",
+"operation": "new_body",
+"rails": [],
+"ruled": false,
+"sections": [{
+"body": "body1",
+"kind": "face",
+"name": "f2:end",
+"sig": {
+"area": 0.009921460481683499,
+"normal": Vector3(0, 0, 1),
+"point": Vector3(0, -2.0489717e-18, 0.01),
+"type": "plane"
+}
+}, {
+"body": "body2",
+"kind": "face",
+"name": "f4:end",
+"sig": {
+"area": 0.002021460471625207,
+"normal": Vector3(0, 0, 1),
+"point": Vector3(0.044151254, 1.0475507e-19, 0.02),
+"type": "plane"
+}
+}],
+"targets": []
+}
+
+[sub_resource type="Resource" id="Resource_300gl"]
+script = ExtResource("3_d5cfa")
+features = Array[Resource]([SubResource("Resource_n14uy"), SubResource("Resource_i4xu3"), SubResource("Resource_xcq7n"), SubResource("Resource_jrhnc"), SubResource("Resource_ccpql")])
+bodies = {
+"body1": {
+"component": "",
+"feature": "f2",
+"locked": false,
+"name": "Base",
+"visible": true
+},
+"body2": {
+"component": "comp1",
+"feature": "f4",
+"locked": false,
+"name": "Lever",
+"visible": true
+},
+"body3": {
+"component": "",
+"feature": "f5",
+"locked": false,
+"name": "Body3",
+"visible": true
+}
+}
+components = {
+"comp1": {
+"feature": "f4",
+"name": "Lever",
+"parent": "",
+"visible": true
+}
+}
+counters = {
+"body": 3,
+"component": 1,
+"d": 4,
+"feature": 5,
+"type:extrude": 2,
+"type:sketch": 2,
+"type:surface": 1
+}
+
+[sub_resource type="Resource" id="Resource_nvlj5"]
+script = ExtResource("2_0jstq")
+id = "f1"
+type = "sketch"
+label = "Sketch1"
+options = {
+"constraints": [],
+"entities": [{
+"fixed": true,
+"id": 1,
+"origin": true,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"fixed": false,
+"id": 2,
+"type": "point",
+"x": -0.05,
+"y": -0.05
+}, {
+"fixed": false,
+"id": 3,
+"type": "point",
+"x": 0.080000006,
+"y": -0.05
+}, {
+"fixed": false,
+"id": 4,
+"type": "point",
+"x": 0.080000006,
+"y": 0.05
+}, {
+"fixed": false,
+"id": 5,
+"type": "point",
+"x": -0.05,
+"y": 0.05
+}, {
+"centerline": false,
+"construction": false,
+"id": 6,
+"p1": 2,
+"p2": 3,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 7,
+"p1": 3,
+"p2": 4,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 8,
+"p1": 4,
+"p2": 5,
+"type": "line"
+}, {
+"centerline": false,
+"construction": false,
+"id": 9,
+"p1": 5,
+"p2": 2,
+"type": "line"
+}, {
+"fixed": false,
+"id": 10,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"c": 10,
+"construction": false,
+"id": 11,
+"r": 0.002,
+"type": "circle"
+}, {
+"fixed": false,
+"id": 12,
+"type": "point",
+"x": 0.030000001,
+"y": 0.0
+}, {
+"c": 12,
+"construction": false,
+"id": 13,
+"r": 0.002,
+"type": "circle"
+}],
+"next_id": 14,
+"plane": {
+"origin": Vector3(0, 0, 0),
+"x": Vector3(1, 0, 0),
+"y": Vector3(0, 1, 0)
+},
+"plane_ref": "xy",
+"visible": true
+}
+
+[sub_resource type="Resource" id="Resource_hwy76"]
+script = ExtResource("2_0jstq")
+id = "f2"
+type = "extrude"
+label = "Extrude1"
+inputs = {
+"distance": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d1"
+},
+"start_offset": {
+"expression": "0.0 mm",
+"kind": "length",
+"name": "d2"
+}
+}
+options = {
+"body_id": "body1",
+"operation": "new_body",
+"profiles": [{
+"kind": "profile",
+"point": Vector2(0.015000001, 0),
+"sketch": "f1"
+}],
+"start": "offset"
+}
+
+[sub_resource type="Resource" id="Resource_b63kg"]
+script = ExtResource("2_0jstq")
+id = "f3"
+type = "sketch"
+label = "Sketch2"
+options = {
+"constraints": [],
+"entities": [{
+"fixed": true,
+"id": 1,
+"origin": true,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"fixed": false,
+"id": 2,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"c": 2,
+"construction": false,
+"id": 3,
+"r": 0.02,
+"type": "circle"
+}],
+"next_id": 4,
+"plane": {
+"origin": Vector3(0, 0, 0),
+"x": Vector3(1, 0, 0),
+"y": Vector3(0, 1, 0)
+},
+"plane_ref": "xy",
+"visible": true
+}
+
+[sub_resource type="Resource" id="Resource_2iqmu"]
+script = ExtResource("2_0jstq")
+id = "f4"
+type = "extrude"
+label = "Extrude2"
+inputs = {
+"distance": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d3"
+},
+"start_offset": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d4"
+}
+}
+options = {
+"body_id": "body2",
+"component_id": "comp1",
+"operation": "new_component",
+"profiles": [{
+"kind": "profile",
+"point": Vector2(0, 0),
+"sketch": "f3"
+}],
+"start": "offset"
+}
+
+[sub_resource type="Resource" id="Resource_atcrv"]
+script = ExtResource("2_0jstq")
+id = "f5"
+type = "sketch"
+label = "Sketch3"
+options = {
+"constraints": [],
+"entities": [{
+"fixed": true,
+"id": 1,
+"origin": true,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"fixed": false,
+"id": 2,
+"type": "point",
+"x": 0.030000001,
+"y": 0.0
+}, {
+"c": 2,
+"construction": false,
+"id": 3,
+"r": 0.01,
+"type": "circle"
+}],
+"next_id": 4,
+"plane": {
+"origin": Vector3(0, 0, 0),
+"x": Vector3(1, 0, 0),
+"y": Vector3(0, 1, 0)
+},
+"plane_ref": "xy",
+"visible": true
+}
+
+[sub_resource type="Resource" id="Resource_7xs7n"]
+script = ExtResource("2_0jstq")
+id = "f6"
+type = "extrude"
+label = "Extrude3"
+inputs = {
+"distance": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d5"
+},
+"start_offset": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d6"
+}
+}
+options = {
+"body_id": "body3",
+"component_id": "comp2",
+"operation": "new_component",
+"profiles": [{
+"kind": "profile",
+"point": Vector2(0.030000001, 0),
+"sketch": "f5"
+}],
+"start": "offset"
+}
+
+[sub_resource type="Resource" id="Resource_3l1vw"]
+script = ExtResource("2_0jstq")
+id = "f7"
+type = "sketch"
+label = "Sketch4"
+options = {
+"constraints": [],
+"entities": [{
+"fixed": true,
+"id": 1,
+"origin": true,
+"type": "point",
+"x": 0.0,
+"y": 0.0
+}, {
+"fixed": false,
+"id": 2,
+"type": "point",
+"x": 0.04,
+"y": 0.035
+}, {
+"c": 2,
+"construction": false,
+"id": 3,
+"r": 0.011180341,
+"type": "circle"
+}],
+"next_id": 4,
+"plane": {
+"origin": Vector3(0, 0, 0.01),
+"x": Vector3(1, 0, 0),
+"y": Vector3(0, 1, 0)
+},
+"plane_ref": "face:body1:7",
+"visible": true
+}
+
+[sub_resource type="Resource" id="Resource_3ughs"]
+script = ExtResource("2_0jstq")
+id = "f8"
+type = "extrude"
+label = "Extrude4"
+inputs = {
+"distance": {
+"expression": "50",
+"kind": "length",
+"name": "d7"
+},
+"taper": {
+"expression": "0",
+"kind": "angle",
+"name": "d8"
+}
+}
+options = {
+"body_id": "body4",
+"extent": "distance",
+"flip": false,
+"operation": "new_body",
+"profiles": [{
+"kind": "profile",
+"point": Vector2(0.04, 0.035),
+"sketch": "f7"
+}],
+"side": "one",
+"start": "profile",
+"start_object": [],
+"targets": [],
+"thin": false,
+"thin_side": "inside",
+"to_object": [],
+"whole_length": false
+}
+
+[sub_resource type="Resource" id="Resource_2d7oe"]
+script = ExtResource("3_d5cfa")
+features = Array[Resource]([SubResource("Resource_nvlj5"), SubResource("Resource_hwy76"), SubResource("Resource_b63kg"), SubResource("Resource_2iqmu"), SubResource("Resource_atcrv"), SubResource("Resource_7xs7n"), SubResource("Resource_3l1vw"), SubResource("Resource_3ughs")])
+bodies = {
+"body1": {
+"component": "",
+"feature": "f2",
+"locked": false,
+"name": "Base",
+"visible": true
+},
+"body2": {
+"component": "comp1",
+"feature": "f4",
+"locked": false,
+"name": "Gear1",
+"visible": true
+},
+"body3": {
+"component": "comp2",
+"feature": "f6",
+"locked": false,
+"name": "Gear2",
+"visible": true
+},
+"body4": {
+"component": "",
+"feature": "f8",
+"locked": false,
+"name": "Body4",
+"visible": true
+}
+}
+components = {
+"comp1": {
+"feature": "f4",
+"name": "Gear1",
+"parent": "",
+"visible": true
+},
+"comp2": {
+"feature": "f6",
+"name": "Gear2",
+"parent": "",
+"visible": true
+}
+}
+counters = {
+"body": 4,
+"component": 2,
+"d": 8,
+"feature": 8,
+"type:extrude": 4,
+"type:sketch": 4
+}
+assembly = {
+"contact": {
+"enabled": false,
+"precision": 1e-06,
+"step": 0.001,
+"tolerance": 1e-05
+},
+"contact_sets": [],
+"counters": {
+"contact": 0,
+"group": 0,
+"joint": 2,
+"link": 0,
+"origin": 0,
+"study": 0
+},
+"grounded": {},
+"joints": [{
+"a": {
+"component": "comp1",
+"snap": {
+"at": [0.0, 0.0, 0.01],
+"body": "body2",
+"frame": PackedFloat64Array(1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0.01),
+"kind": "circle_center",
+"normal": [0.0, 0.0, -1.0],
+"ref": {
+"body": "body2",
+"kind": "edge",
+"name": "f4:g(s3)|f4:start",
+"sig": {
+"length": 0.12566370614359174,
+"point": Vector3(-0.02, 2.4492936e-18, 0.01),
+"type": "circle"
+}
+}
+}
+},
+"angle": 0.0,
+"as_built": false,
+"b": {
+"component": "",
+"snap": {
+"at": [0.0, 0.0, 0.01],
+"body": "body1",
+"frame": PackedFloat64Array(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.01),
+"kind": "circle_center",
+"normal": [0.0, 0.0, 1.0],
+"ref": {
+"body": "body1",
+"kind": "edge",
+"name": "f2:end|f2:g(s11)",
+"sig": {
+"length": 0.012566370614359173,
+"point": Vector3(-0.002, 2.4492937e-19, 0.01),
+"type": "circle"
+}
+}
+}
+},
+"dofs": [{
+"limited_max": false,
+"limited_min": false,
+"max": 0.0,
+"min": 0.0,
+"rest": 0.0,
+"value": 0.0
+}],
+"flip": false,
+"id": "joint1",
+"name": "Joint1",
+"offset": [0.0, 0.0, 0.0],
+"slide_axis": "z",
+"suppressed": false,
+"type": "revolute",
+"visible": true
+}, {
+"a": {
+"component": "comp2",
+"snap": {
+"at": [0.030000001, 0.0, 0.01],
+"body": "body3",
+"frame": PackedFloat64Array(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.030000001, 0, 0.01),
+"kind": "circle_center",
+"normal": [0.0, 0.0, -1.0],
+"ref": {
+"body": "body3",
+"kind": "edge",
+"name": "f6:g(s3)|f6:start",
+"sig": {
+"length": 0.06283185307179587,
+"point": Vector3(0.020000001, 1.2246468e-18, 0.01),
+"type": "circle"
+}
+}
+}
+},
+"angle": 0.0,
+"as_built": false,
+"b": {
+"component": "",
+"snap": {
+"at": [0.030000001, 0.0, 0.01],
+"body": "body1",
+"frame": PackedFloat64Array(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.030000001, 0, 0.01),
+"kind": "circle_center",
+"normal": [0.0, 0.0, 1.0],
+"ref": {
+"body": "body1",
+"kind": "edge",
+"name": "f2:end|f2:g(s13)",
+"sig": {
+"length": 0.012566370614359173,
+"point": Vector3(0.028, 2.4492937e-19, 0.01),
+"type": "circle"
+}
+}
+}
+},
+"dofs": [{
+"limited_max": false,
+"limited_min": false,
+"max": 0.0,
+"min": 0.0,
+"rest": 0.0,
+"value": 0.0
+}],
+"flip": false,
+"id": "joint2",
+"name": "Joint2",
+"offset": [0.0, 0.0, 0.0],
+"slide_axis": "z",
+"suppressed": false,
+"type": "revolute",
+"visible": true
+}],
+"links": [],
+"origins": [],
+"placements": {},
+"rigid_groups": [],
+"studies": [],
+"version": 1
+}
+assembly_exact = "3:20bcfd75f9928116:GwAAADMAAAAEAAAAEgAAAC9jb250YWN0L3ByZWNpc2lvbgAAAwABAI3ttaD3xrA+BAAAAA0AAAAvY29udGFjdC9zdGVwAAAAAwABAPyp8dJNYlA/BAAAABIAAAAvY29udGFjdC90b2xlcmFuY2UAAAMAAQDxaOOItfjkPgQAAAAbAAAAL2pvaW50cy8jam9pbnQxL2Evc25hcC9hdC8wAAMAAAAAAAAABAAAABsAAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL2F0LzEAAwAAAAAAAAAEAAAAGwAAAC9qb2ludHMvI2pvaW50MS9hL3NuYXAvYXQvMgADAAAACtcjPAQAAAAcAAAAL2pvaW50cy8jam9pbnQxL2Evc25hcC9mcmFtZSEAAAAMAAAAAAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAAAAACAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAPC/AAAAAAAAAAAAAAAAAAAAAAAAAEDheoQ/BAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL25vcm1hbC8wAAMAAAAAAACABAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL25vcm1hbC8xAAMAAAAAAAAABAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL25vcm1hbC8yAAMAAAAAAIC/BAAAACUAAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL3JlZi9zaWcvbGVuZ3RoAAAAAwABABonF5K/FcA/BAAAABUAAAAvam9pbnRzLyNqb2ludDEvYW5nbGUAAAADAAAAAAAAAAQAAAAbAAAAL2pvaW50cy8jam9pbnQxL2Ivc25hcC9hdC8wAAMAAAAAAAAABAAAABsAAAAvam9pbnRzLyNqb2ludDEvYi9zbmFwL2F0LzEAAwAAAAAAAAAEAAAAGwAAAC9qb2ludHMvI2pvaW50MS9iL3NuYXAvYXQvMgADAAAACtcjPAQAAAAcAAAAL2pvaW50cy8jam9pbnQxL2Ivc25hcC9mcmFtZSEAAAAMAAAAAAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAADwPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAPA/AAAAAAAAAAAAAAAAAAAAAAAAAEDheoQ/BAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYi9zbmFwL25vcm1hbC8wAAMAAAAAAAAABAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYi9zbmFwL25vcm1hbC8xAAMAAAAAAACABAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYi9zbmFwL25vcm1hbC8yAAMAAAAAAIA/BAAAACUAAAAvam9pbnRzLyNqb2ludDEvYi9zbmFwL3JlZi9zaWcvbGVuZ3RoAAAAAwABAMNxi7ZlvIk/BAAAABoAAAAvam9pbnRzLyNqb2ludDEvZG9mcy8wL21heAAAAwAAAAAAAAAEAAAAGgAAAC9qb2ludHMvI2pvaW50MS9kb2ZzLzAvbWluAAADAAAAAAAAAAQAAAAbAAAAL2pvaW50cy8jam9pbnQxL2RvZnMvMC9yZXN0AAMAAAAAAAAABAAAABwAAAAvam9pbnRzLyNqb2ludDEvZG9mcy8wL3ZhbHVlAwAAAAAAAAAEAAAAGAAAAC9qb2ludHMvI2pvaW50MS9vZmZzZXQvMAMAAAAAAAAABAAAABgAAAAvam9pbnRzLyNqb2ludDEvb2Zmc2V0LzEDAAAAAAAAAAQAAAAYAAAAL2pvaW50cy8jam9pbnQxL29mZnNldC8yAwAAAAAAAAAEAAAAGwAAAC9qb2ludHMvI2pvaW50Mi9hL3NuYXAvYXQvMAADAAAAkML1PAQAAAAbAAAAL2pvaW50cy8jam9pbnQyL2Evc25hcC9hdC8xAAMAAAAAAAAABAAAABsAAAAvam9pbnRzLyNqb2ludDIvYS9zbmFwL2F0LzIAAwAAAArXIzwEAAAAHAAAAC9qb2ludHMvI2pvaW50Mi9hL3NuYXAvZnJhbWUhAAAADAAAAAAAAAAAAPA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAAAAgAAAAAAAAACAAAAAAAAAAAAAAAAAAADwvwAAAABSuJ4/AAAAAAAAAAAAAABA4XqEPwQAAAAfAAAAL2pvaW50cy8jam9pbnQyL2Evc25hcC9ub3JtYWwvMAADAAAAAAAAgAQAAAAfAAAAL2pvaW50cy8jam9pbnQyL2Evc25hcC9ub3JtYWwvMQADAAAAAAAAAAQAAAAfAAAAL2pvaW50cy8jam9pbnQyL2Evc25hcC9ub3JtYWwvMgADAAAAAACAvwQAAAAlAAAAL2pvaW50cy8jam9pbnQyL2Evc25hcC9yZWYvc2lnL2xlbmd0aAAAAAMAAQAaJxeSvxWwPwQAAAAVAAAAL2pvaW50cy8jam9pbnQyL2FuZ2xlAAAAAwAAAAAAAAAEAAAAGwAAAC9qb2ludHMvI2pvaW50Mi9iL3NuYXAvYXQvMAADAAAAkML1PAQAAAAbAAAAL2pvaW50cy8jam9pbnQyL2Ivc25hcC9hdC8xAAMAAAAAAAAABAAAABsAAAAvam9pbnRzLyNqb2ludDIvYi9zbmFwL2F0LzIAAwAAAArXIzwEAAAAHAAAAC9qb2ludHMvI2pvaW50Mi9iL3NuYXAvZnJhbWUhAAAADAAAAAAAAAAAAPA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAADwPwAAAABSuJ4/AAAAAAAAAAAAAABA4XqEPwQAAAAfAAAAL2pvaW50cy8jam9pbnQyL2Ivc25hcC9ub3JtYWwvMAADAAAAAAAAAAQAAAAfAAAAL2pvaW50cy8jam9pbnQyL2Ivc25hcC9ub3JtYWwvMQADAAAAAAAAgAQAAAAfAAAAL2pvaW50cy8jam9pbnQyL2Ivc25hcC9ub3JtYWwvMgADAAAAAACAPwQAAAAlAAAAL2pvaW50cy8jam9pbnQyL2Ivc25hcC9yZWYvc2lnL2xlbmd0aAAAAAMAAQDDcYu2ZbyJPwQAAAAaAAAAL2pvaW50cy8jam9pbnQyL2RvZnMvMC9tYXgAAAMAAAAAAAAABAAAABoAAAAvam9pbnRzLyNqb2ludDIvZG9mcy8wL21pbgAAAwAAAAAAAAAEAAAAGwAAAC9qb2ludHMvI2pvaW50Mi9kb2ZzLzAvcmVzdAADAAAAAAAAAAQAAAAcAAAAL2pvaW50cy8jam9pbnQyL2RvZnMvMC92YWx1ZQMAAAAAAAAABAAAABgAAAAvam9pbnRzLyNqb2ludDIvb2Zmc2V0LzADAAAAAAAAAAQAAAAYAAAAL2pvaW50cy8jam9pbnQyL29mZnNldC8xAwAAAAAAAAAEAAAAGAAAAC9qb2ludHMvI2pvaW50Mi9vZmZzZXQvMgMAAAAAAAAA"
+
+[sub_resource type="Resource" id="Resource_v3f67"]
+script = ExtResource("2_0jstq")
+id = "f1"
+type = "box"
+label = "Box1"
+inputs = {
+"height": {
+"expression": "100.0 mm",
+"kind": "length",
+"name": "d2"
+},
+"length": {
+"expression": "220.0 mm",
+"kind": "length",
+"name": "d1"
+},
+"width": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d3"
+}
+}
+options = {
+"body_id": "body1",
+"operation": "new_body",
+"position": Vector3(0.09, -0.05, 0.0050000004)
+}
+
+[sub_resource type="Resource" id="Resource_u8usc"]
+script = ExtResource("2_0jstq")
+id = "f2"
+type = "box"
+label = "Box2"
+inputs = {
+"height": {
+"expression": "60.0 mm",
+"kind": "length",
+"name": "d5"
+},
+"length": {
+"expression": "10.0 mm",
+"kind": "length",
+"name": "d4"
+},
+"width": {
+"expression": "40.0 mm",
+"kind": "length",
+"name": "d6"
+}
+}
+options = {
+"body_id": "body2",
+"operation": "new_body",
+"position": Vector3(0.035, -0.030000001, 0.020000001)
+}
+
+[sub_resource type="Resource" id="Resource_wed8m"]
+script = ExtResource("2_0jstq")
+id = "f3"
+type = "box"
+label = "Box3"
+inputs = {
+"height": {
+"expression": "20.0 mm",
+"kind": "length",
+"name": "d8"
+},
+"length": {
+"expression": "20.0 mm",
+"kind": "length",
+"name": "d7"
+},
+"width": {
+"expression": "20.0 mm",
+"kind": "length",
+"name": "d9"
+}
+}
+options = {
+"body_id": "body3",
+"component_id": "comp1",
+"operation": "new_component",
+"position": Vector3(0.010000001, -0.010000001, 0.020000001)
+}
+
+[sub_resource type="Resource" id="Resource_eqwbd"]
+script = ExtResource("3_d5cfa")
+features = Array[Resource]([SubResource("Resource_v3f67"), SubResource("Resource_u8usc"), SubResource("Resource_wed8m")])
+bodies = {
+"body1": {
+"component": "",
+"feature": "f1",
+"locked": false,
+"name": "Base",
+"visible": true
+},
+"body2": {
+"component": "",
+"feature": "f2",
+"locked": false,
+"name": "Wall",
+"visible": true
+},
+"body3": {
+"component": "comp1",
+"feature": "f3",
+"locked": false,
+"name": "Block",
+"visible": true
+}
+}
+components = {
+"comp1": {
+"feature": "f3",
+"name": "Block",
+"parent": "",
+"visible": true
+}
+}
+counters = {
+"body": 3,
+"component": 1,
+"d": 9,
+"feature": 3,
+"type:box": 3
+}
+assembly = {
+"contact": {
+"enabled": false,
+"precision": 1e-06,
+"step": 0.001,
+"tolerance": 1e-05
+},
+"contact_sets": [],
+"counters": {
+"contact": 1,
+"group": 0,
+"joint": 1,
+"link": 0,
+"origin": 0,
+"study": 0
+},
+"grounded": {},
+"joints": [{
+"a": {
+"component": "comp1",
+"snap": {
+"at": [0.010000001, -9.313226e-10, 0.010000002],
+"body": "body3",
+"frame": PackedFloat64Array(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.010000001, -9.313226e-10, 0.010000002),
+"kind": "face_center",
+"normal": [0.0, 0.0, -1.0],
+"ref": {
+"body": "body3",
+"kind": "face",
+"name": "f3:z-",
+"sig": {
+"area": 0.0003999999821186067,
+"normal": Vector3(0, 0, -1),
+"point": Vector3(0.010000001, -9.313226e-10, 0.010000002),
+"type": "plane"
+}
+}
+}
+},
+"angle": 0.0,
+"as_built": true,
+"b": {
+"component": "",
+"snap": {
+"at": [0.010000001, -9.313226e-10, 0.010000002],
+"body": "",
+"frame": PackedFloat64Array(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.010000001, -9.313226e-10, 0.010000002),
+"kind": "fixed",
+"normal": [0.0, 0.0, -1.0],
+"ref": {}
+}
+},
+"dofs": [{
+"limited_max": false,
+"limited_min": false,
+"max": 0.0,
+"min": 0.0,
+"rest": 0.0,
+"value": 0.0
+}],
+"flip": false,
+"id": "joint1",
+"name": "Joint1",
+"offset": [0.0, 0.0, 0.0],
+"slide_axis": "x",
+"suppressed": false,
+"type": "slider",
+"visible": true
+}],
+"links": [],
+"origins": [],
+"placements": {},
+"rigid_groups": [],
+"studies": [],
+"version": 1
+}
+assembly_exact = "3:b1eefad60b7ae8cf:GwAAABoAAAAEAAAAEgAAAC9jb250YWN0L3ByZWNpc2lvbgAAAwABAI3ttaD3xrA+BAAAAA0AAAAvY29udGFjdC9zdGVwAAAAAwABAPyp8dJNYlA/BAAAABIAAAAvY29udGFjdC90b2xlcmFuY2UAAAMAAQDxaOOItfjkPgQAAAAbAAAAL2pvaW50cy8jam9pbnQxL2Evc25hcC9hdC8wAAMAAAAL1yM8BAAAABsAAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL2F0LzEAAwAAAAAAgLAEAAAAGwAAAC9qb2ludHMvI2pvaW50MS9hL3NuYXAvYXQvMgADAAAADNcjPAQAAAAcAAAAL2pvaW50cy8jam9pbnQxL2Evc25hcC9mcmFtZSEAAAAMAAAAAAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAPC/AAAAYOF6hD8AAAAAAAAQvgAAAIDheoQ/BAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL25vcm1hbC8wAAMAAAAAAACABAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL25vcm1hbC8xAAMAAAAAAACABAAAAB8AAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL25vcm1hbC8yAAMAAAAAAIC/BAAAACMAAAAvam9pbnRzLyNqb2ludDEvYS9zbmFwL3JlZi9zaWcvYXJlYQADAAEA/xhz1+I2Oj8EAAAAFQAAAC9qb2ludHMvI2pvaW50MS9hbmdsZQAAAAMAAAAAAAAABAAAABsAAAAvam9pbnRzLyNqb2ludDEvYi9zbmFwL2F0LzAAAwAAAAvXIzwEAAAAGwAAAC9qb2ludHMvI2pvaW50MS9iL3NuYXAvYXQvMQADAAAAAACAsAQAAAAbAAAAL2pvaW50cy8jam9pbnQxL2Ivc25hcC9hdC8yAAMAAAAM1yM8BAAAABwAAAAvam9pbnRzLyNqb2ludDEvYi9zbmFwL2ZyYW1lIQAAAAwAAAAAAAAAAADwPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAAAAAAAAAAAAAAAgAAAAAAAAACAAAAAAAAA8L8AAABg4XqEPwAAAAAAABC+AAAAgOF6hD8EAAAAHwAAAC9qb2ludHMvI2pvaW50MS9iL3NuYXAvbm9ybWFsLzAAAwAAAAAAAIAEAAAAHwAAAC9qb2ludHMvI2pvaW50MS9iL3NuYXAvbm9ybWFsLzEAAwAAAAAAAIAEAAAAHwAAAC9qb2ludHMvI2pvaW50MS9iL3NuYXAvbm9ybWFsLzIAAwAAAAAAgL8EAAAAGgAAAC9qb2ludHMvI2pvaW50MS9kb2ZzLzAvbWF4AAADAAAAAAAAAAQAAAAaAAAAL2pvaW50cy8jam9pbnQxL2RvZnMvMC9taW4AAAMAAAAAAAAABAAAABsAAAAvam9pbnRzLyNqb2ludDEvZG9mcy8wL3Jlc3QAAwAAAAAAAAAEAAAAHAAAAC9qb2ludHMvI2pvaW50MS9kb2ZzLzAvdmFsdWUDAAAAAAAAAAQAAAAYAAAAL2pvaW50cy8jam9pbnQxL29mZnNldC8wAwAAAAAAAAAEAAAAGAAAAC9qb2ludHMvI2pvaW50MS9vZmZzZXQvMQMAAAAAAAAABAAAABgAAAAvam9pbnRzLyNqb2ludDEvb2Zmc2V0LzIDAAAAAAAAAA=="
+
+[node name="AssemblyEditorTest" type="Node3D" unique_id=1004867784]
+
+[node name="LeverPart" type="Node3D" parent="." unique_id=826413712]
+script = ExtResource("1_dehm8")
+document = SubResource("Resource_300gl")
+
+[node name="Lever" type="Node3D" parent="LeverPart" unique_id=813297986]
+metadata/holo_forge_component = "comp1"
+
+[node name="Lever" type="MeshInstance3D" parent="LeverPart/Lever" unique_id=181849007]
+mesh = ExtResource("4_b63kg")
+metadata/holo_forge_body = "body2"
+
+[node name="Base" type="MeshInstance3D" parent="LeverPart" unique_id=812383337]
+mesh = ExtResource("5_2iqmu")
+metadata/holo_forge_body = "body1"
+
+[node name="Body3" type="MeshInstance3D" parent="LeverPart" unique_id=289704903]
+mesh = ExtResource("6_atcrv")
+metadata/holo_forge_body = "body3"
+
+[node name="GearsPart" type="Node3D" parent="." unique_id=977058387]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+script = ExtResource("1_dehm8")
+document = SubResource("Resource_2d7oe")
+
+[node name="Gear1" type="Node3D" parent="GearsPart" unique_id=1244839218]
+metadata/holo_forge_component = "comp1"
+
+[node name="Gear1" type="MeshInstance3D" parent="GearsPart/Gear1" unique_id=1335820381]
+mesh = ExtResource("7_7xs7n")
+metadata/holo_forge_body = "body2"
+
+[node name="Gear2" type="Node3D" parent="GearsPart" unique_id=900801746]
+metadata/holo_forge_component = "comp2"
+
+[node name="Gear2" type="MeshInstance3D" parent="GearsPart/Gear2" unique_id=1967106201]
+mesh = ExtResource("8_2d7oe")
+metadata/holo_forge_body = "body3"
+
+[node name="Base" type="MeshInstance3D" parent="GearsPart" unique_id=492895882]
+mesh = ExtResource("9_v3f67")
+metadata/holo_forge_body = "body1"
+
+[node name="Body4" type="MeshInstance3D" parent="GearsPart" unique_id=1116750760]
+mesh = ExtResource("10_u8usc")
+metadata/holo_forge_body = "body4"
+
+[node name="SliderPart" type="Node3D" parent="." unique_id=1638932806]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+script = ExtResource("1_dehm8")
+document = SubResource("Resource_eqwbd")
+
+[node name="Block" type="Node3D" parent="SliderPart" unique_id=1063175368]
+metadata/holo_forge_component = "comp1"
+
+[node name="Block" type="MeshInstance3D" parent="SliderPart/Block" unique_id=737917696]
+mesh = ExtResource("11_wed8m")
+metadata/holo_forge_body = "body3"
+
+[node name="Base" type="MeshInstance3D" parent="SliderPart" unique_id=1301738398]
+mesh = ExtResource("12_eqwbd")
+metadata/holo_forge_body = "body1"
+
+[node name="Wall" type="MeshInstance3D" parent="SliderPart" unique_id=587435906]
+mesh = ExtResource("13_oisap")
+metadata/holo_forge_body = "body2"

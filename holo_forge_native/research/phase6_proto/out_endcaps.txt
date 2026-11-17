@@ -1,0 +1,104 @@
+OpenSubdiv 30500
+
+=== 2. End-cap type x isolation level: patches, gaps, G1, deviation, sewing, volume ===
+reference volume 2.620376
+endcap    L  patches reg/end  build_ms | maxGap      meanGap    | maxNormalJump p99   | maxDev     meanDev   | sew(1e-6): free closed valid vol_err%  ms | sew(1e-4): free closed vol_err% | merged: faces spans sew closed valid vol_err%
+  [L2 built 96 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 18 dev 1 sew6 27 sew4 27 merge 0 sewM 13 ms; merged poles total 726]
+BILINEAR  2    96   72/24       0.1 | 1.710e-02  3.175e-03 (RR 4.0e-16 E 1.7e-02) |   27.199°  27.199° (RR 0.000°) | 2.254e-02  3.746e-03 |   96 0 0 -100.0000     26 |   96 0 -100.0000 | 6 4 0 1 1  -1.4373
+  [L4 built 240 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 112 dev 2 sew6 83 sew4 83 merge 13 sewM 35 ms; merged poles total 3174]
+BILINEAR  4   240  216/24       0.3 | 1.963e-03  1.452e-04 (RR 5.2e-16 E 2.0e-03) |    5.495°   5.225° (RR 0.000°) | 3.610e-03  1.436e-04 |   96 0 0 -100.0000     79 |   96 0 -100.0000 | 6 16 0 1 1  -0.0132
+  [L1 built 24 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 3 dev 0 sew6 16 sew4 16 merge 0 sewM 6 ms; merged poles total 216]
+BSPLINE   1    24   24/0        0.1 | 5.839e-15  5.191e-16 (RR 5.8e-15 E 0.0e+00) |    2.176°   2.176° (RR 2.176°) | 2.388e-02  4.874e-03 |    0 1 1   0.1174     16 |    0 1   0.1174 | 6 2 0 1 1   0.0857
+  [L2 built 96 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 16 dev 1 sew6 63 sew4 62 merge 0 sewM 11 ms; merged poles total 486]
+BSPLINE   2    96   96/0        0.1 | 2.784e-15  1.112e-16 (RR 2.8e-15 E 0.0e+00) |    1.087°   1.087° (RR 1.087°) | 9.873e-03  4.990e-04 |    0 1 1   0.0063     61 |    0 1   0.0063 | 6 4 0 1 1   0.0109
+  [L3 built 168 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 36 dev 2 sew6 127 sew4 125 merge 2 sewM 30 ms; merged poles total 1014]
+BSPLINE   3   168  168/0        0.2 | 4.611e-16  1.137e-16 (RR 4.6e-16 E 0.0e+00) |    0.519°   0.498° (RR 0.519°) | 4.063e-03  1.172e-04 |    0 1 1   0.0018    125 |    0 1   0.0018 | 6 8 0 1 1   0.0013
+  [L4 built 240 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 108 dev 3 sew6 193 sew4 189 merge 12 sewM 33 ms; merged poles total 2646]
+BSPLINE   4   240  240/0        0.3 | 5.237e-16  1.173e-16 (RR 5.2e-16 E 0.0e+00) |    0.236°   0.225° (RR 0.236°) | 1.668e-03  3.367e-05 |    0 1 1   0.0016    188 |    0 1   0.0016 | 6 16 0 1 1   0.0017
+  [L5 built 312 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 270 dev 3 sew6 251 sew4 257 merge 78 sewM 37 ms; merged poles total 8214]
+BSPLINE   5   312  312/0        0.3 | 5.237e-16  1.186e-16 (RR 5.2e-16 E 0.0e+00) |    0.104°   0.092° (RR 0.104°) | 6.845e-04  1.063e-05 |    0 1 1   0.0016    245 |    0 1   0.0016 | 6 32 0 1 1   0.0016
+  [L6 built 384 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 584 dev 4 sew6 321 sew4 318 merge 439 sewM 46 ms; merged poles total 28566]
+BSPLINE   6   384  384/0        0.4 | 6.568e-16  1.198e-16 (RR 6.6e-16 E 0.0e+00) |    0.045°   0.040° (RR 0.045°) | 2.808e-04  3.542e-06 |    0 1 1   0.0016    311 |    0 1   0.0016 | 6 64 0 1 1   0.0016
+  [L1 built 24 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 3 dev 0 sew6 16 sew4 15 merge 0 sewM 6 ms; merged poles total 216]
+GREGORY   1    24    0/24       0.1 | 4.775e-15  4.955e-16 (RR 0.0e+00 E 4.8e-15) |    0.430°   0.430° (RR 0.000°) | 2.388e-02  4.851e-03 |    0 1 1   0.3279     16 |    0 1   0.3279 | 6 2 0 1 1   0.2732
+  [L2 built 96 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 16 dev 1 sew6 66 sew4 65 merge 0 sewM 11 ms; merged poles total 726]
+GREGORY   2    96   72/24       0.1 | 2.223e-15  1.337e-16 (RR 4.0e-16 E 2.2e-15) |    0.277°   0.277° (RR 0.000°) | 9.873e-03  4.848e-04 |    0 1 1   0.0153     65 |    0 1   0.0153 | 6 4 0 1 1   0.0905
+  [L3 built 168 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 37 dev 2 sew6 133 sew4 126 merge 3 sewM 31 ms; merged poles total 1350]
+GREGORY   3   168  144/24       0.2 | 1.217e-15  1.217e-16 (RR 4.6e-16 E 1.2e-15) |    0.149°   0.135° (RR 0.000°) | 4.063e-03  1.128e-04 |    0 1 1   0.0021    130 |    0 1   0.0021 | 6 8 0 1 1   0.0034
+  [L4 built 240 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 111 dev 3 sew6 186 sew4 203 merge 12 sewM 33 ms; merged poles total 3174]
+GREGORY   4   240  216/24       0.3 | 6.305e-16  1.196e-16 (RR 5.2e-16 E 6.3e-16) |    0.073°   0.066° (RR 0.000°) | 1.668e-03  3.235e-05 |    0 1 1   0.0017    181 |    0 1   0.0017 | 6 16 0 1 1   0.0039
+  [L5 built 312 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 283 dev 3 sew6 259 sew4 252 merge 70 sewM 39 ms; merged poles total 9126]
+GREGORY   5   312  288/24       0.3 | 5.237e-16  1.189e-16 (RR 5.2e-16 E 4.6e-16) |    0.033°   0.030° (RR 0.000°) | 6.845e-04  1.021e-05 |    0 1 1   0.0016    251 |    0 1   0.0016 | 6 32 0 1 1   0.0020
+  [L6 built 384 patches]
+  [gaps done]
+  [sew6 done]
+  [sew4 done]
+  [merge done]
+   [timing gaps 594 dev 4 sew6 310 sew4 308 merge 390 sewM 45 ms; merged poles total 30246]
+GREGORY   6   384  360/24       0.4 | 5.606e-16  1.219e-16 (RR 5.6e-16 E 4.6e-16) |    0.015°   0.013° (RR 0.000°) | 2.808e-04  3.401e-06 |    0 1 1   0.0016    302 |    0 1   0.0016 | 6 64 0 1 1   0.0018
+done

@@ -1,0 +1,49 @@
+{
+	"about": "Standard thread sizes for Hole and Thread. Lengths are in each standard's unit. ISO Metric: coarse pitch, ISO 273 clearance holes, counterbores for ISO 4762 socket head cap screws, 90-degree countersinks for ISO 10642 flat heads. UNC/UNF: inch sizes with number/letter drill tap and clearance (close/free) diameters, socket head counterbores and 82-degree countersinks.",
+	"standards": {
+		"ISO Metric": {
+			"unit": "mm",
+			"countersink_angle": 90,
+			"sizes": [
+				{"name": "M2", "major": 2.0, "pitch": 0.4, "tap_drill": 1.6, "clearance": {"close": 2.2, "normal": 2.4, "loose": 2.6}, "counterbore": {"diameter": 4.4, "depth": 2.3}, "countersink": 4.4},
+				{"name": "M2.5", "major": 2.5, "pitch": 0.45, "tap_drill": 2.05, "clearance": {"close": 2.7, "normal": 2.9, "loose": 3.1}, "counterbore": {"diameter": 5.4, "depth": 2.8}, "countersink": 5.5},
+				{"name": "M3", "major": 3.0, "pitch": 0.5, "tap_drill": 2.5, "clearance": {"close": 3.2, "normal": 3.4, "loose": 3.6}, "counterbore": {"diameter": 6.5, "depth": 3.3}, "countersink": 6.72},
+				{"name": "M4", "major": 4.0, "pitch": 0.7, "tap_drill": 3.3, "clearance": {"close": 4.3, "normal": 4.5, "loose": 4.8}, "counterbore": {"diameter": 8.0, "depth": 4.4}, "countersink": 8.96},
+				{"name": "M5", "major": 5.0, "pitch": 0.8, "tap_drill": 4.2, "clearance": {"close": 5.3, "normal": 5.5, "loose": 5.8}, "counterbore": {"diameter": 10.0, "depth": 5.4}, "countersink": 11.2},
+				{"name": "M6", "major": 6.0, "pitch": 1.0, "tap_drill": 5.0, "clearance": {"close": 6.4, "normal": 6.6, "loose": 7.0}, "counterbore": {"diameter": 11.0, "depth": 6.5}, "countersink": 13.44},
+				{"name": "M8", "major": 8.0, "pitch": 1.25, "tap_drill": 6.8, "clearance": {"close": 8.4, "normal": 9.0, "loose": 10.0}, "counterbore": {"diameter": 15.0, "depth": 8.6}, "countersink": 17.92},
+				{"name": "M10", "major": 10.0, "pitch": 1.5, "tap_drill": 8.5, "clearance": {"close": 10.5, "normal": 11.0, "loose": 12.0}, "counterbore": {"diameter": 18.0, "depth": 10.8}, "countersink": 22.4},
+				{"name": "M12", "major": 12.0, "pitch": 1.75, "tap_drill": 10.2, "clearance": {"close": 13.0, "normal": 13.5, "loose": 14.5}, "counterbore": {"diameter": 20.0, "depth": 13.0}, "countersink": 26.88},
+				{"name": "M16", "major": 16.0, "pitch": 2.0, "tap_drill": 14.0, "clearance": {"close": 17.0, "normal": 17.5, "loose": 18.5}, "counterbore": {"diameter": 26.0, "depth": 17.5}, "countersink": 33.6},
+				{"name": "M20", "major": 20.0, "pitch": 2.5, "tap_drill": 17.5, "clearance": {"close": 21.0, "normal": 22.0, "loose": 24.0}, "counterbore": {"diameter": 33.0, "depth": 21.5}, "countersink": 40.32},
+				{"name": "M24", "major": 24.0, "pitch": 3.0, "tap_drill": 21.0, "clearance": {"close": 25.0, "normal": 26.0, "loose": 28.0}, "counterbore": {"diameter": 40.0, "depth": 25.5}, "countersink": 48.0}
+			]
+		},
+		"UNC": {
+			"unit": "in",
+			"countersink_angle": 82,
+			"sizes": [
+				{"name": "#2-56", "major": 0.086, "tpi": 56, "tap_drill": 0.070, "clearance": {"close": 0.089, "normal": 0.096, "loose": 0.1015}, "counterbore": {"diameter": 0.165, "depth": 0.09}, "countersink": 0.172},
+				{"name": "#4-40", "major": 0.112, "tpi": 40, "tap_drill": 0.089, "clearance": {"close": 0.116, "normal": 0.1285, "loose": 0.136}, "counterbore": {"diameter": 0.219, "depth": 0.12}, "countersink": 0.225},
+				{"name": "#6-32", "major": 0.138, "tpi": 32, "tap_drill": 0.1065, "clearance": {"close": 0.144, "normal": 0.1495, "loose": 0.161}, "counterbore": {"diameter": 0.281, "depth": 0.145}, "countersink": 0.279},
+				{"name": "#8-32", "major": 0.164, "tpi": 32, "tap_drill": 0.136, "clearance": {"close": 0.1695, "normal": 0.177, "loose": 0.1935}, "counterbore": {"diameter": 0.3125, "depth": 0.17}, "countersink": 0.332},
+				{"name": "#10-24", "major": 0.19, "tpi": 24, "tap_drill": 0.1495, "clearance": {"close": 0.196, "normal": 0.201, "loose": 0.221}, "counterbore": {"diameter": 0.375, "depth": 0.2}, "countersink": 0.385},
+				{"name": "1/4-20", "major": 0.25, "tpi": 20, "tap_drill": 0.201, "clearance": {"close": 0.257, "normal": 0.266, "loose": 0.281}, "counterbore": {"diameter": 0.4375, "depth": 0.26}, "countersink": 0.507},
+				{"name": "5/16-18", "major": 0.3125, "tpi": 18, "tap_drill": 0.257, "clearance": {"close": 0.323, "normal": 0.332, "loose": 0.344}, "counterbore": {"diameter": 0.531, "depth": 0.32}, "countersink": 0.635},
+				{"name": "3/8-16", "major": 0.375, "tpi": 16, "tap_drill": 0.3125, "clearance": {"close": 0.386, "normal": 0.397, "loose": 0.4062}, "counterbore": {"diameter": 0.625, "depth": 0.385}, "countersink": 0.762},
+				{"name": "1/2-13", "major": 0.5, "tpi": 13, "tap_drill": 0.4219, "clearance": {"close": 0.5156, "normal": 0.5312, "loose": 0.5625}, "counterbore": {"diameter": 0.8125, "depth": 0.51}, "countersink": 1.016}
+			]
+		},
+		"UNF": {
+			"unit": "in",
+			"countersink_angle": 82,
+			"sizes": [
+				{"name": "#10-32", "major": 0.19, "tpi": 32, "tap_drill": 0.159, "clearance": {"close": 0.196, "normal": 0.201, "loose": 0.221}, "counterbore": {"diameter": 0.375, "depth": 0.2}, "countersink": 0.385},
+				{"name": "1/4-28", "major": 0.25, "tpi": 28, "tap_drill": 0.213, "clearance": {"close": 0.257, "normal": 0.266, "loose": 0.281}, "counterbore": {"diameter": 0.4375, "depth": 0.26}, "countersink": 0.507},
+				{"name": "5/16-24", "major": 0.3125, "tpi": 24, "tap_drill": 0.272, "clearance": {"close": 0.323, "normal": 0.332, "loose": 0.344}, "counterbore": {"diameter": 0.531, "depth": 0.32}, "countersink": 0.635},
+				{"name": "3/8-24", "major": 0.375, "tpi": 24, "tap_drill": 0.332, "clearance": {"close": 0.386, "normal": 0.397, "loose": 0.4062}, "counterbore": {"diameter": 0.625, "depth": 0.385}, "countersink": 0.762},
+				{"name": "1/2-20", "major": 0.5, "tpi": 20, "tap_drill": 0.4531, "clearance": {"close": 0.5156, "normal": 0.5312, "loose": 0.5625}, "counterbore": {"diameter": 0.8125, "depth": 0.51}, "countersink": 1.016}
+			]
+		}
+	}
+}

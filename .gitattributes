@@ -1,0 +1,2 @@
+# Keep every file byte for byte as it is in the project (mixed CRLF/LF; tests check line endings).
+* -text

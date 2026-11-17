@@ -1,0 +1,21 @@
+{
+  "name": "holo-forge-native",
+  "version": "0.1.0",
+  "description": "Holo Forge CAD kernel GDExtension (OpenCASCADE, planegcs, Manifold, OpenSubdiv, pmp, meshoptimizer).",
+  "builtin-baseline": "5363acb796e576328288fae60c25304e227e9839",
+  "dependencies": [
+    {
+      "name": "opencascade",
+      "default-features": false
+    },
+    "eigen3",
+    "boost-graph",
+    "manifold",
+    "meshoptimizer",
+    {
+      "name": "opensubdiv",
+      "default-features": false
+    },
+    "pmp-library"
+  ]
+}

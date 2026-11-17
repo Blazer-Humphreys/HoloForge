@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.28)
+project(osd_proto LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(OpenCASCADE CONFIG REQUIRED)
+find_package(OpenSubdiv CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+add_executable(osd_proto proto.cpp)
+target_compile_definitions(osd_proto PRIVATE _USE_MATH_DEFINES NOMINMAX)
+target_compile_options(osd_proto PRIVATE /EHsc /bigobj /utf-8 /O2 /W1)
+target_link_libraries(osd_proto PRIVATE OpenSubdiv::osdCPU_static Eigen3::Eigen
+    TKernel TKMath TKG2d TKG3d TKGeomBase TKBRep TKGeomAlgo TKTopAlgo TKPrim TKBO TKShHealing TKMesh)
+target_include_directories(osd_proto PRIVATE ${OpenCASCADE_INCLUDE_DIR} ${OpenSubdiv_INCLUDE_DIR})

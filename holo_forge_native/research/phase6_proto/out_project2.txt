@@ -1,0 +1,16 @@
+=== 10. Closest point on the limit surface (Bfr + hash-grid seeds rate 6 + clamped Newton, 3 faces) ===
+-- up to 1 candidate faces per query
+cube cage                          build 0.2 ms, 25.6 us/query (avg 4.9 Newton iters), queries worse than dense-48 sampling: 39/300 (max excess 1.32e+00)
+noisy cube 3x3                     build 0.8 ms, 52.4 us/query (avg 3.9 Newton iters), queries worse than dense-48 sampling: 51/300 (max excess 4.68e-02)
+ico L1 split (240 quads)           build 2.8 ms, 158.5 us/query (avg 4.4 Newton iters), queries worse than dense-48 sampling: 43/300 (max excess 3.36e-03)
+cube 16x16 per side (1536 quads)   build 11.2 ms, 263.4 us/query (avg 1.4 Newton iters), queries worse than dense-48 sampling: 45/300 (max excess 3.55e-03)
+-- up to 3 candidate faces per query
+cube cage                          build 0.2 ms, 31.4 us/query (avg 27.8 Newton iters), queries worse than dense-48 sampling: 2/300 (max excess 6.68e-03)
+noisy cube 3x3                     build 0.7 ms, 60.7 us/query (avg 19.5 Newton iters), queries worse than dense-48 sampling: 1/300 (max excess 6.50e-03)
+ico L1 split (240 quads)           build 3.0 ms, 167.7 us/query (avg 30.3 Newton iters), queries worse than dense-48 sampling: 1/300 (max excess 3.82e-04)
+cube 16x16 per side (1536 quads)   build 12.0 ms, 272.5 us/query (avg 3.8 Newton iters), queries worse than dense-48 sampling: 0/300 (max excess 0.00e+00)
+-- up to 6 candidate faces per query
+cube cage                          build 0.2 ms, 37.2 us/query (avg 30.4 Newton iters), queries worse than dense-48 sampling: 2/300 (max excess 6.68e-03)
+noisy cube 3x3                     build 1.0 ms, 112.6 us/query (avg 36.6 Newton iters), queries worse than dense-48 sampling: 0/300 (max excess 0.00e+00)
+ico L1 split (240 quads)           build 2.8 ms, 183.9 us/query (avg 64.2 Newton iters), queries worse than dense-48 sampling: 0/300 (max excess 0.00e+00)
+cube 16x16 per side (1536 quads)   build 11.8 ms, 279.1 us/query (avg 5.5 Newton iters), queries worse than dense-48 sampling: 0/300 (max excess 0.00e+00)

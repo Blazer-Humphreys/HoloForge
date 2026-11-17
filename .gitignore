@@ -1,0 +1,9 @@
+# Godot
+.godot/
+# Godot's working copy of the kernel while the editor is open
+~*.dll
+# Build output and temp files
+build/
+__pycache__/
+*.tmp
+~RF*.TMP

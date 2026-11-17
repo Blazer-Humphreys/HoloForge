@@ -1,0 +1,28 @@
+OpenSubdiv 30500
+
+=== 9. Interpolate on general cages (creases, boundaries) ===
+cube cage                                    nV     8 nnz     56: stencils 1.7 ms, SparseLU ok 0.1 ms, max |limit(v)-target| 8.0e-16, max control-point move 2.936, cond(A) 7.08e+16 | Tikhonov 1e-8 LDLT 0.0 ms residual 3.5e-08 move 1.732
+cube + inf-sharp top loop + sharp corner     nV     8 nnz     34: stencils 1.3 ms, SparseLU ok 0.0 ms, max |limit(v)-target| 6.7e-16, max control-point move 2.473, cond(A) 7.03 | Tikhonov 1e-8 LDLT 0.0 ms residual 1.3e-07 move 2.473
+open wavy plane 4x4                          nV    25 nnz    121: stencils 0.0 ms, SparseLU ok 0.0 ms, max |limit(v)-target| 2.3e-16, max control-point move 0.041, cond(A) 5.88 | Tikhonov 1e-8 LDLT 0.0 ms residual 6.1e-10 move 0.041
+open wavy plane 16x16                        nV   289 nnz   2209: stencils 0.3 ms, SparseLU ok 0.7 ms, max |limit(v)-target| 3.1e-16, max control-point move 0.003, cond(A) 9.22 | Tikhonov 1e-8 LDLT 0.9 ms residual 3.6e-11 move 0.003
+noisy cube 3x3                               nV    56 nnz    488: stencils 2.0 ms, SparseLU ok 0.1 ms, max |limit(v)-target| 5.0e-16, max control-point move 1.238, cond(A) 10.7 | Tikhonov 1e-8 LDLT 0.2 ms residual 6.4e-08 move 1.238
+ico L1 split (240 quads)                     nV   242 nnz   2162: stencils 34.7 ms, SparseLU ok 1.1 ms, max |limit(v)-target| 8.3e-16, max control-point move 0.036, cond(A) 11.1 | Tikhonov 1e-8 LDLT 1.1 ms residual 1.5e-09 move 0.036
+ico L3 split (3840 quads)                    nV  3842 nnz  34562: stencils 575.8 ms, SparseLU ok 29.2 ms, max |limit(v)-target| 1.2e-15, max control-point move 0.008, cond(A) -1 | Tikhonov 1e-8 LDLT 60.2 ms residual 3.8e-10 move 0.008
+torus 12x6                                   nV    72 nnz    648: stencils 0.1 ms, SparseLU ok 0.2 ms, max |limit(v)-target| 4.4e-16, max control-point move 0.149, cond(A) 9 | Tikhonov 1e-8 LDLT 0.2 ms residual 1.8e-09 move 0.149
+
+=== 10. Closest point on the limit surface (Bfr + hash-grid seeds rate 6 + clamped Newton, 3 faces) ===
+-- up to 1 candidate faces per query
+cube cage                          build 0.2 ms, 2.1 us/query (avg 5.2 Newton iters), queries worse than dense-48 sampling: 47/300 (max excess 1.32e+00)
+noisy cube 3x3                     build 1.4 ms, 4.9 us/query (avg 4.2 Newton iters), queries worse than dense-48 sampling: 51/300 (max excess 9.92e-02)
+ico L1 split (240 quads)           build 3.4 ms, 12.3 us/query (avg 4.7 Newton iters), queries worse than dense-48 sampling: 53/300 (max excess 1.83e-02)
+cube 16x16 per side (1536 quads)   build 12.7 ms, 50.8 us/query (avg 1.4 Newton iters), queries worse than dense-48 sampling: 49/300 (max excess 3.34e-03)
+-- up to 3 candidate faces per query
+cube cage                          build 0.2 ms, 3.6 us/query (avg 9.8 Newton iters), queries worse than dense-48 sampling: 2/300 (max excess 6.68e-03)
+noisy cube 3x3                     build 0.7 ms, 7.6 us/query (avg 14.0 Newton iters), queries worse than dense-48 sampling: 5/300 (max excess 3.97e-02)
+ico L1 split (240 quads)           build 3.4 ms, 18.4 us/query (avg 26.7 Newton iters), queries worse than dense-48 sampling: 11/300 (max excess 1.83e-02)
+cube 16x16 per side (1536 quads)   build 11.5 ms, 51.6 us/query (avg 3.7 Newton iters), queries worse than dense-48 sampling: 0/300 (max excess 0.00e+00)
+-- up to 6 candidate faces per query
+cube cage                          build 0.2 ms, 3.9 us/query (avg 9.8 Newton iters), queries worse than dense-48 sampling: 2/300 (max excess 6.68e-03)
+noisy cube 3x3                     build 0.8 ms, 9.9 us/query (avg 17.6 Newton iters), queries worse than dense-48 sampling: 5/300 (max excess 3.97e-02)
+ico L1 split (240 quads)           build 3.1 ms, 23.7 us/query (avg 43.4 Newton iters), queries worse than dense-48 sampling: 10/300 (max excess 1.83e-02)
+cube 16x16 per side (1536 quads)   build 11.7 ms, 53.8 us/query (avg 5.1 Newton iters), queries worse than dense-48 sampling: 0/300 (max excess 0.00e+00)

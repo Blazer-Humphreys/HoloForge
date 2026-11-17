@@ -1,0 +1,9 @@
+OpenSubdiv 30500
+
+=== 3. Creases (cube cage) ===
+smooth                 useInfSharpPatch=0: patches 240 (reg 216, endcap 24, boundary-masked 0), crease mid normal jump 0.00° (match dist 1.3e-09), maxGap 6.30e-16, sew free 0 closed 1 valid 1 vol 2.62042 | merged 6 faces spans 16 free 0 closed 1 valid 1 vol 2.62048
+smooth                 useInfSharpPatch=1: patches 240 (reg 216, endcap 24, boundary-masked 0), crease mid normal jump 0.00° (match dist 1.3e-09), maxGap 6.30e-16, sew free 0 closed 1 valid 1 vol 2.62042 | merged 6 faces spans 16 free 0 closed 1 valid 1 vol 2.62048
+inf-sharp edge (10)    useInfSharpPatch=0: patches 288 (reg 264, endcap 24, boundary-masked 0), crease mid normal jump 0.00° (match dist 1.3e-09), maxGap 3.07e-15, sew free 0 closed 1 valid 1 vol 2.77375 | merged 6 faces spans 16 free 0 closed 1 valid 1 vol 2.77381
+inf-sharp edge (10)    useInfSharpPatch=1: patches 240 (reg 216, endcap 24, boundary-masked 12), crease mid normal jump 81.30° (match dist 1.7e-09), maxGap 3.07e-15, sew free 0 closed 1 valid 1 vol 2.77431 | merged 6 faces spans 16 free 0 closed 1 valid 1 vol 2.77437
+semi-sharp edge (2.0)  useInfSharpPatch=0: patches 240 (reg 216, endcap 24, boundary-masked 0), crease mid normal jump 0.00° (match dist 1.3e-09), maxGap 3.07e-15, sew free 0 closed 1 valid 1 vol 2.76469 | merged 6 faces spans 16 free 0 closed 1 valid 1 vol 2.76476
+semi-sharp edge (2.0)  useInfSharpPatch=1: patches 240 (reg 216, endcap 24, boundary-masked 0), crease mid normal jump 0.00° (match dist 1.3e-09), maxGap 3.07e-15, sew free 0 closed 1 valid 1 vol 2.76469 | merged 6 faces spans 16 free 0 closed 1 valid 1 vol 2.76476

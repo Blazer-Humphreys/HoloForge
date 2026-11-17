@@ -1,0 +1,10 @@
+OpenSubdiv 30500
+
+=== 5. Performance (cube cages k x k per side) ===
+faces   verts | refiner | uniform L2: refine+interp+limit (verts) | L3 (verts) | stencil-table L3 build / apply | adaptive Gregory L3 table (patches) | Bfr tess rate 8 (all faces) | convert: patches->faces+sew (merged faces) closed valid
+    6      8 |   0.02 |     0.1 ms (     98) |     0.1 ms (     386) |     0.3 ms /   0.00 ms |     0.2 ms (   168) |     0.2 ms (486 pts) |     3.0 +     29.5 ms (6) 1 1
+   96     98 |   0.04 |     0.5 ms (   1538) |     1.9 ms (    6146) |     5.4 ms /   0.11 ms |     0.4 ms (   312) |     1.1 ms (7776 pts) |    10.3 +    164.0 ms (96) 1 1
+  384    386 |   0.14 |     1.7 ms (   6146) |     6.6 ms (   24578) |    21.0 ms /   0.31 ms |     0.6 ms (   600) |     3.3 ms (31104 pts) |    12.3 +    362.6 ms (384) 1 1
+ 1536   1538 |   0.35 |     6.0 ms (  24578) |    25.2 ms (   98306) |    83.0 ms /   1.37 ms |     1.5 ms (  1752) |    12.5 ms (124416 pts) |    19.8 +   1204.0 ms (1536) 1 1
+ 5046   5048 |   1.28 |    19.5 ms (  80738) |    84.5 ms (  322946) |   262.3 ms /   5.42 ms |     3.5 ms (  5262) |    41.8 ms (408726 pts) |    39.7 +   3831.8 ms (5046) 1 1
+alldone

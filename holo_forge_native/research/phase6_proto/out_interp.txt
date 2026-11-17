@@ -1,0 +1,8 @@
+OpenSubdiv 30500
+
+=== 4. Interpolate: solve control points so limit(vertex) = target (sphere radius 1) ===
+cage     6 faces     8 verts: stencils 1.2 ms, assemble+SparseLU 0.1 ms (nnz 56), max |limit-target| 3.33e-16, limit radius after solve [0.96938, 1.00000]
+cage    96 faces    98 verts: stencils 1.3 ms, assemble+SparseLU 0.3 ms (nnz 866), max |limit-target| 3.38e-16, limit radius after solve [0.99607, 1.00198]
+cage   384 faces   386 verts: stencils 1.8 ms, assemble+SparseLU 1.3 ms (nnz 3458), max |limit-target| 4.97e-16, limit radius after solve [0.99974, 1.00022]
+cage  1536 faces  1538 verts: stencils 2.9 ms, assemble+SparseLU 7.5 ms (nnz 13826), max |limit-target| 5.59e-16, limit radius after solve [0.99992, 1.00009]
+cage  6144 faces  6146 verts: stencils 7.1 ms, assemble+SparseLU 42.1 ms (nnz 55298), max |limit-target| 6.75e-16, limit radius after solve [0.99998, 1.00003]

@@ -1,0 +1,14 @@
+OpenSubdiv 30500
+
+=== 8. Direct shell build (shared edges + iso pcurves) vs BRepBuilderAPI_Sewing ===
+
+-- ico L1 split (240 quads, 122 EVs): 240 faces
+L3  patches   3840 poles    40560: table+extract+merge      51 ms | direct shell: 240 faces 480 edges closed 1 valid 1 (after SameParameter 0) vol 3.9562012 build 93 ms check 39 ms sameParam 0 ms | sewing:  closed 1 valid 1 vol 3.9562012 3472 ms
+L4  patches   5280 poles    54000: table+extract+merge     143 ms | direct shell: 240 faces 480 edges closed 1 valid 1 (after SameParameter 0) vol 3.9562049 build 92 ms check 42 ms sameParam 0 ms | sewing:  closed 1 valid 1 vol 3.9562049 8731 ms
+
+-- cube 29x29 per side (5046 quads): 5046 faces
+L4  patches   5334 poles    82752: table+extract+merge      38 ms | direct shell: 5046 faces 10092 edges closed 1 valid 1 (after SameParameter 0) vol 7.9905842 build 1454 ms check 1090 ms sameParam 0 ms | sewing: (skipped) closed 0 valid 0 vol 0.0000000 0 ms
+
+-- ico L3 split (3840 quads, 1922 EVs): 3840 faces
+L3  patches  61440 poles   648960: table+extract+merge     937 ms | direct shell: 3840 faces 7680 edges closed 1 valid 1 (after SameParameter 0) vol 4.1736383 build 1888 ms check 843 ms sameParam 0 ms | sewing: (skipped) closed 0 valid 0 vol 0.0000000 0 ms
+L4  patches  84480 poles   864000: table+extract+merge    2013 ms | direct shell: 3840 faces 7680 edges closed 1 valid 1 (after SameParameter 0) vol 4.1736386 build 2163 ms check 919 ms sameParam 0 ms | sewing: (skipped) closed 0 valid 0 vol 0.0000000 0 ms

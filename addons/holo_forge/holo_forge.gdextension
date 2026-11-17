@@ -1,0 +1,15 @@
+[configuration]
+
+entry_symbol = "holo_forge_library_init"
+compatibility_minimum = "4.7"
+reloadable = false
+
+[libraries]
+
+; Editor-only: game exports never load the CAD kernel (scenes use baked meshes).
+windows.editor.x86_64 = "res://addons/holo_forge/bin/holo_forge_native.dll"
+
+[dependencies]
+
+windows.editor.x86_64 = {
+}

@@ -1,0 +1,9 @@
+OpenSubdiv 30500
+
+=== 1. Cube cage (8 verts, 6 quads) Catmull-Clark limit sphericity ===
+reference = adaptive Gregory isolation 10 (|L10-L8| max = 1.36e-16)
+radius: min 0.839506  max 0.866025  mean 0.856366  (max-min)/mean = 3.097%
+max |r-mean|/mean = 1.969%
+face-center r 0.839506   edge-mid r 0.862059   corner r 0.866025
+uniform L6 PrimvarRefiner::Limit (24578 exact limit points): r in [0.839506, 0.866025]
+reference volume (256^2 tris/face) = 2.620376 ; sphere of mean radius = 2.630675
