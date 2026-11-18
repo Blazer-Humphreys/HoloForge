@@ -2085,13 +2085,13 @@ static func handle_mouse_edit_by_curve(editor: Object, event: InputEvent) -> boo
 		while offsets.size() < n:
 			offsets.append(Vector3.ZERO)
 		var origin := Vector3(edited[3 * hit], edited[3 * hit + 1], edited[3 * hit + 2])
-		tool_state["curve_drag"] = {"origin": origin, "start": viewport.plane_hit(button.position, origin, -viewport.camera().global_transform.basis.z),
+		tool_state["curve_drag"] = {"origin": origin, "start": viewport.plane_hit(button.position, origin, -viewport.camera_basis().z),
 			"offsets": offsets, "selected": selected}
 		editor.set_tool_values({"curve_selected": Array(selected)})
 		return true
 	if motion != null and tool_state.has("curve_drag"):
 		var drag: Dictionary = tool_state.curve_drag
-		var normal: Vector3 = -viewport.camera().global_transform.basis.z
+		var normal: Vector3 = -viewport.camera_basis().z
 		var now: Variant = viewport.plane_hit(motion.position, drag.origin, normal)
 		if now == null or drag.start == null:
 			return true

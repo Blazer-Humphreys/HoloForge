@@ -63,7 +63,9 @@ godot --headless --path <project> --editor -- --holo-forge-handles-editor-test
 
 Run one `--editor` hook at a time. Each one prints `PASS` or `FAIL` and exits with 0 or 1.
 
-`holo_forge_background_render_test.gd` checks rendered pixels, so it needs a window (no `--headless`). Run it in both renderers, since the Forge view has to draw in Forward+ and in Compatibility projects:
+Add `--holo-forge-test-world-offset` after `--` to any test or hook to run it with the Forge view's space moved off its origin (as Passthrough moves it). Everything should pass that way too.
+
+`holo_forge_background_render_test.gd` and `holo_forge_passthrough_render_test.gd` check rendered pixels, so they need a window (no `--headless`). Run each in both renderers, since the Forge view has to draw in Forward+ and in Compatibility projects:
 
 ```bash
 godot --path <project> --rendering-method forward_plus --script res://tests/holo_forge_background_render_test.gd

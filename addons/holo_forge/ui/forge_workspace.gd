@@ -85,7 +85,12 @@ const ASSEMBLY_KEYS := ["assembly"]
 ## The Mesh workspace's own actions: the pick modes and the selection helpers (Mesh > Select).
 const MESH_SELECT_ACTIONS := ["mesh_pick_groups", "mesh_pick_triangles", "mesh_grow", "mesh_shrink", "mesh_connected", "mesh_boundary"]
 const MESH_WORKSPACE := "Mesh"
-const NO_MESH_BODY := "There is no mesh body yet. Insert a mesh (Mesh > Create > Insert Mesh) or Tessellate a body."
+## Passthrough: where it is saved, and what the view says when it can't show or leaves scale out.
+const PASSTHROUGH_KEY := "passthrough"
+const S_PASSTHROUGH_NO_PART := "Passthrough needs a part: select a CadPart in a 3D scene."
+const S_PASSTHROUGH_NO_SCENE := "Passthrough needs the part in an open 3D scene."
+const S_PASSTHROUGH_SCALE := "Passthrough shows the part at its modelled size; its scale in the scene (%s, %s, %s) is left out."
+const NO_MESH_BODY :="There is no mesh body yet. Insert a mesh (Mesh > Create > Insert Mesh) or Tessellate a body."
 ## Ids of the entries the workspace adds to the browser's body menu.
 const BROWSER_CONVERT := 700
 const BROWSER_REDUCE := 701
@@ -243,6 +248,26 @@ var theme_store: Variant = null:
 		theme_store = value
 		theme_mode = FORGE_THEME.read_mode(_theme_store())
 		apply_theme()
+## Passthrough (Display > Passthrough): the view shows the part where it stands in its 3D scene,
+## lit by it (see set_passthrough). Saved per project beside the theme.
+var passthrough := false
+## Where passthrough is saved: null for the default (as theme_store), or a Dictionary or ConfigFile
+## (tests). Setting it reads what is saved there.
+var passthrough_store: Variant = null:
+	set(value):
+		passthrough_store = value
+		passthrough = _read_passthrough()
+		sync_passthrough()
+## The scene Passthrough shows: null for the edited scene (tests set a Node3D in a world of its own).
+var passthrough_scene_root: Node = null:
+	set(value):
+		passthrough_scene_root = value
+		sync_passthrough()
+var _passthrough_transform := Transform3D.IDENTITY
+var _passthrough_hide_queued := false
+## Whether the scene world had a light of its own at the last full sync_passthrough.
+var _passthrough_lit := false
+var _passthrough_scale_noted := false
 ## The editor's base colour as the "editor" mode sees it: null for the real one (tests set a Color).
 var theme_host_base: Variant = null:
 	set(value):
@@ -403,6 +428,7 @@ func _init() -> void:
 	viewport.add_child(_placeholder)
 
 	viewport.pick_clicked.connect(_on_pick_clicked)
+	viewport.passthrough_requested.connect(set_passthrough)
 	viewport.region_selected.connect(_on_region_selected)
 	viewport.paint_picked.connect(_on_paint_picked)
 	viewport.hover_changed.connect(func(pick: Dictionary) -> void: hover = pick)
@@ -504,11 +530,14 @@ func _init() -> void:
 
 	theme_mode = FORGE_THEME.read_mode(_theme_store())
 	apply_theme()
+	passthrough = _read_passthrough()
+	viewport.set_passthrough_menu(passthrough, passthrough_blocker())
 
 
 func _process(_delta: float) -> void:
 	# A sketch or form opened or closed outside a command (they don't tell the workspace).
 	_sync_modelled_view()
+	_follow_passthrough_part()
 
 
 func _notification(what: int) -> void:
@@ -517,6 +546,11 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED and not _theme_queued:
 		_theme_queued = true
 		_refresh_theme.call_deferred()
+	# Passthrough shows the scene only while the tab is shown (the 3D tab draws the part's own nodes).
+	if what == NOTIFICATION_VISIBILITY_CHANGED:
+		sync_passthrough()
+	elif what == NOTIFICATION_EXIT_TREE:
+		end_passthrough()
 
 
 func _draw() -> void:
@@ -568,6 +602,8 @@ func set_part(new_part: Node3D) -> void:
 	if doc != null and doc.assembly is Dictionary and ASSEMBLY_DATA.is_newer(doc.assembly):
 		# Shown, never edited here (C1.6).
 		_flash(ASSEMBLY_DATA.S_NEWER_ASSEMBLY)
+	_passthrough_scale_noted = false
+	sync_passthrough()
 
 
 ## Replays the timeline, redraws everything and refreshes the part's baked bodies.
@@ -637,6 +673,7 @@ func recompute() -> void:
 	if form_preview == "" and not _is_mesh_tool(command) and part != null and is_instance_valid(part) and part.is_inside_tree():
 		part.apply_result(result, tessellations)
 		_baked_decals = doc.decals.duplicate(true)
+		_rehide_passthrough()
 	_refresh_analyses()
 	_refresh_images()
 	if command != null:
@@ -1506,6 +1543,7 @@ func _refresh_view_data() -> void:
 	if part != null and is_instance_valid(part) and part.is_inside_tree() and doc.decals != _baked_decals and not result.has("preview_stops_at"):
 		part.apply_result(result, tessellations)
 		_baked_decals = doc.decals.duplicate(true)
+		_rehide_passthrough()
 	if mesh_direct_edit.active:
 		# (Direct Edit keeps showing its working mesh in its body's place.)
 		mesh_direct_edit.refresh()
@@ -2725,7 +2763,7 @@ func plane_at(screen: Vector2) -> Dictionary:
 		if info.get("planar", false):
 			return {"frame": SKETCH_DATA.face_plane(info.point, info.normal), "ref": "face:%s:%d" % [face_pick.body, int(face_pick.face)]}
 	var size: float = viewport.origin_size()
-	var camera_position: Vector3 = viewport.camera().global_position
+	var camera_position: Vector3 = viewport.camera_position()
 	var best := {}
 	var best_distance := INF
 	for key in ["xy", "xz", "yz"]:
@@ -3821,8 +3859,8 @@ func _select_mesh_region(region: Dictionary) -> void:
 	if planes.is_empty():
 		return
 	var shapes := mesh_shapes()
-	var eye: Vector3 = viewport.camera().global_position
-	var forward: Vector3 = -viewport.camera().global_transform.basis.z
+	var eye: Vector3 = viewport.camera_position()
+	var forward: Vector3 = -viewport.camera_basis().z
 	for body_id in shapes:
 		var settings: Dictionary = doc.body_settings(body_id)
 		if not doc.body_visible(body_id) or bool(settings.get("locked", false)):
@@ -4296,6 +4334,142 @@ func _refresh_theme() -> void:
 
 func _theme_store() -> Variant:
 	return theme_store if theme_store != null else FORGE_THEME.default_store()
+
+
+# --- Passthrough -----------------------------------------------------------------------------
+
+## Display > Passthrough: turns it on or off (saved, see passthrough_store) and shows the part in
+## its scene now if it can; if it can't, says why.
+func set_passthrough(on: bool) -> void:
+	passthrough = on
+	var store: Variant = _passthrough_store()
+	if store is Dictionary:
+		(store as Dictionary)[PASSTHROUGH_KEY] = on
+	elif store is Object and is_instance_valid(store):
+		if store.has_method("set_project_metadata"):
+			store.set_project_metadata(FORGE_THEME.SECTION, PASSTHROUGH_KEY, on)
+		elif store.has_method("set_value"):
+			store.set_value(FORGE_THEME.SECTION, PASSTHROUGH_KEY, on)
+	_passthrough_scale_noted = false
+	sync_passthrough()
+	var blocker := passthrough_blocker()
+	if on and blocker != "":
+		_flash(blocker)
+
+
+## Why Passthrough can't show the part now ("" when it can): it needs a part inside an open 3D scene.
+func passthrough_blocker() -> String:
+	if part == null or not is_instance_valid(part) or not part.is_inside_tree():
+		return S_PASSTHROUGH_NO_PART
+	var root := _passthrough_root()
+	if not (root is Node3D) or not root.is_inside_tree() or (root != part and not root.is_ancestor_of(part)):
+		return S_PASSTHROUGH_NO_SCENE
+	if (root as Node3D).get_world_3d() == null:
+		return S_PASSTHROUGH_NO_SCENE
+	return ""
+
+
+## Shows the part in its scene when Passthrough is on, the tab is shown and the part is in an open
+## 3D scene; otherwise the view's own world. Called whenever one of those may have changed.
+## moved_only: only the part moved, so the scene's lights are as they were (not looked for again).
+func sync_passthrough(moved_only := false) -> void:
+	if viewport == null:
+		return
+	var blocker := passthrough_blocker()
+	if passthrough and blocker == "" and is_visible_in_tree():
+		var root := _passthrough_root() as Node3D
+		var world := root.get_world_3d()
+		var was_on: bool = viewport.passthrough_on()
+		if not (moved_only and was_on):
+			_passthrough_lit = _scene_lit(world)
+		viewport.set_passthrough(world, part.global_transform, _passthrough_hidden(), _passthrough_lit)
+		_passthrough_transform = part.global_transform
+		if not was_on:
+			var tree := part.get_tree()
+			if not tree.node_added.is_connected(_on_passthrough_node_added):
+				tree.node_added.connect(_on_passthrough_node_added)
+		var scale: Vector3 = part.global_transform.basis.get_scale()
+		if not _passthrough_scale_noted and not scale.is_equal_approx(Vector3.ONE):
+			_passthrough_scale_noted = true
+			_flash(S_PASSTHROUGH_SCALE % [String.num(scale.x, 3), String.num(scale.y, 3), String.num(scale.z, 3)])
+	else:
+		end_passthrough()
+	viewport.set_passthrough_menu(passthrough, blocker)
+
+
+## Back to the view's own world (Passthrough stays on, to show again when it can).
+func end_passthrough() -> void:
+	if viewport != null:
+		viewport.clear_passthrough()
+	var tree := get_tree() if is_inside_tree() else null
+	if tree != null and tree.node_added.is_connected(_on_passthrough_node_added):
+		tree.node_added.disconnect(_on_passthrough_node_added)
+
+
+## The part's own drawn nodes in the scene: the view's bodies show in their place.
+func _passthrough_hidden() -> Array:
+	return part.find_children("*", "VisualInstance3D", true, false)
+
+
+## Whether the scene world has a light of its own (or the editor's preview sun) outside the view.
+func _scene_lit(world: World3D) -> bool:
+	for light in get_tree().root.find_children("*", "Light3D", true, false):
+		if viewport.is_ancestor_of(light) or not (light as Light3D).is_visible_in_tree():
+			continue
+		if (light as Light3D).get_world_3d() == world:
+			return true
+	return false
+
+
+func _passthrough_root() -> Node:
+	if passthrough_scene_root != null:
+		return passthrough_scene_root if is_instance_valid(passthrough_scene_root) else null
+	if Engine.is_editor_hint():
+		return EditorInterface.get_edited_scene_root()
+	return null
+
+
+func _passthrough_store() -> Variant:
+	return passthrough_store if passthrough_store != null else FORGE_THEME.default_store()
+
+
+func _read_passthrough() -> bool:
+	var store: Variant = _passthrough_store()
+	var saved: Variant = false
+	if store is Dictionary:
+		saved = (store as Dictionary).get(PASSTHROUGH_KEY, false)
+	elif store is Object and is_instance_valid(store):
+		if store.has_method("get_project_metadata"):
+			saved = store.get_project_metadata(FORGE_THEME.SECTION, PASSTHROUGH_KEY, false)
+		elif store.has_method("get_value"):
+			saved = store.get_value(FORGE_THEME.SECTION, PASSTHROUGH_KEY, false)
+	return saved is bool and saved
+
+
+## A node came into the tree while Passthrough is on: if it is one of the part's (a body baked
+## again), it is hidden once it is in place.
+func _on_passthrough_node_added(node: Node) -> void:
+	if _passthrough_hide_queued or not (node is VisualInstance3D) or part == null or not is_instance_valid(part) or not part.is_ancestor_of(node):
+		return
+	_passthrough_hide_queued = true
+	_rehide_passthrough.call_deferred()
+
+
+func _rehide_passthrough() -> void:
+	_passthrough_hide_queued = false
+	if viewport != null and viewport.passthrough_on() and part != null and is_instance_valid(part) and part.is_inside_tree():
+		viewport.set_passthrough_hidden(_passthrough_hidden())
+
+
+## The part was moved (the Inspector stays open beside the Forge tab): the view follows it.
+func _follow_passthrough_part() -> void:
+	if viewport == null or not viewport.passthrough_on():
+		return
+	if part == null or not is_instance_valid(part) or not part.is_inside_tree():
+		sync_passthrough()
+		return
+	if not part.global_transform.is_equal_approx(_passthrough_transform):
+		sync_passthrough(true)
 
 
 func _color_status() -> void:

@@ -28,6 +28,7 @@ const SELF_TEST_LOG_ARG := "--holo-forge-self-test-log="
 const SELF_TEST_MENU := "Holo Forge: Run Self-Test"
 const VIDEO_TEST_ARG := "--holo-forge-video-editor-test"
 const MATERIALS_TEST_ARG := "--holo-forge-materials-editor-test"
+const PASSTHROUGH_TEST_ARG := "--holo-forge-passthrough-editor-test"
 ## Editor hook runs ("-- --holo-forge-<name>-test") are kept off the user's project by this script:
 ## the user's open scenes are not opened, and a run that changes a file outside its own folders
 ## fails (tests/holo_forge_hook_guard.gd). HOOK_SESSION is what a hook that was killed leaves.
@@ -107,6 +108,9 @@ func _enter_tree() -> void:
 	if OS.get_cmdline_user_args().has(MATERIALS_TEST_ARG):
 		_editor_test_runner = load("res://tests/holo_forge_materials_editor_test.gd").new()
 		_editor_test_runner.run.call_deferred(self)
+	if OS.get_cmdline_user_args().has(PASSTHROUGH_TEST_ARG):
+		_editor_test_runner = load("res://tests/holo_forge_passthrough_editor_test.gd").new()
+		_editor_test_runner.run.call_deferred(self)
 
 
 func _exit_tree() -> void:
@@ -117,6 +121,8 @@ func _exit_tree() -> void:
 	remove_custom_type("CadPart")
 	remove_tool_menu_item(SELF_TEST_MENU)
 	if is_instance_valid(workspace):
+		# (The scene's part shows again and the view leaves the scene's world first.)
+		workspace.end_passthrough()
 		workspace.queue_free()
 	if _part_saver != null:
 		CAD_PART.use_saver(null)

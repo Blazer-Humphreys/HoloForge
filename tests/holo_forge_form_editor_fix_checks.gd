@@ -199,14 +199,13 @@ class Checks:
 		var subd: RefCounted = entry.get("subd")
 		var size: Vector2 = ws.viewport.size
 		var saved_priority: String = ws.viewport.priority
-		var cam: Camera3D = ws.viewport.camera()
-		var view_dir: Vector3 = -cam.global_transform.basis.z if ws.viewport.ortho else Vector3.ZERO
+		var view_dir: Vector3 = -(ws.viewport.camera_basis() as Basis).z if ws.viewport.ortho else Vector3.ZERO
 		for kind in ["face", "edge"]:
 			ws.viewport.priority = kind
 			editor._region_select(PackedVector2Array([Vector2(2, 2), size - Vector2(2, 2)]), false, false, false)
 			var picked: Array = editor.selection.filter(func(s: Dictionary) -> bool: return s.kind == kind and s.body == body_id)
 			var points: PackedVector3Array = editor._face_centre_points(entry, editor.display_mode(body_id)) if kind == "face" else editor._edge_mid_points(entry, editor.display_mode(body_id))
-			var seen: PackedByteArray = subd.visible(points, cam.global_position, view_dir, maxf(float(entry.diag) * 2e-3, 1e-7), 0)
+			var seen: PackedByteArray = subd.visible(points, (ws.viewport.camera_position() as Vector3), view_dir, maxf(float(entry.diag) * 2e-3, 1e-7), 0)
 			var hidden := 0
 			var visible_total := 0
 			for i in seen.size():
@@ -220,7 +219,7 @@ class Checks:
 				# From the opposite side of the body none of the taken faces can be seen (the box
 				# is convex): nothing taken was a back face.
 				var target: Vector3 = ws.viewport.target
-				var behind: PackedByteArray = subd.visible(points, target * 2.0 - cam.global_position, Vector3.ZERO, maxf(float(entry.diag) * 2e-3, 1e-7), 0)
+				var behind: PackedByteArray = subd.visible(points, target * 2.0 - (ws.viewport.camera_position() as Vector3), Vector3.ZERO, maxf(float(entry.diag) * 2e-3, 1e-7), 0)
 				var seen_behind := 0
 				for s in picked:
 					if behind[int(s.index)] != 0:
@@ -231,7 +230,7 @@ class Checks:
 
 	func _crossing_inside_face(body_id: String) -> void:
 		var entry: Dictionary = editor._subd.get(body_id, {})
-		var cam_pos: Vector3 = ws.viewport.camera().global_position
+		var cam_pos: Vector3 = ws.viewport.camera_position()
 		# A face next to the top centre (its corners' limit points lie well outside a 16 px box at
 		# its centre, unlike a corner face, whose rounded corner sits near its middle).
 		var best := face_at(body_id, Vector3(0.005, 0.005, 0.02))
@@ -424,7 +423,7 @@ class Checks:
 		select([item("body", body_id, -1)])
 		var entry: Dictionary = editor._subd.get(body_id, {})
 		var centres: PackedVector3Array = editor._face_centre_points(entry, editor.display_mode(body_id))
-		var cam_pos: Vector3 = ws.viewport.camera().global_position
+		var cam_pos: Vector3 = ws.viewport.camera_position()
 		var topo: CAGE.Topo = entry.topo
 		var facing := []
 		for face in topo.nF:
@@ -518,8 +517,7 @@ class Checks:
 		editor._region_select(PackedVector2Array([Vector2(2, 2), size - Vector2(2, 2)]), false, false, false)
 		ws.viewport.priority = saved_priority
 		await shot("fix_%s_window_front.png" % theme)
-		var cam: Camera3D = ws.viewport.camera()
-		var toward: Vector3 = (cam.global_position - ws.viewport.target).normalized()
+		var toward: Vector3 = ((ws.viewport.camera_position() as Vector3) - ws.viewport.target).normalized()
 		ws.viewport.look_from(-toward)
 		await frames(2)
 		await shot("fix_%s_window_back.png" % theme)

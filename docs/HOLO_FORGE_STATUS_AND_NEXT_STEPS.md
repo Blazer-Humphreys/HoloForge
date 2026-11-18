@@ -423,6 +423,35 @@ This is a work order for whoever continues: you, or a future AI session. Read it
    - **Gate after the three behaviour changes (2026-11-16, 06:44-07:21):** the same, 67/67 and 12/12 (handles-editor 103 drags), no SCRIPT ERROR, validate at the known 6.
    - Backups of the four fixed files are in scratchpad `backup_handles\`.
 
+12. **Passthrough (2026-11-18, at the user's request: "see what the object looks like in their scene").**
+   - **What it does:** **Display > Passthrough** (`forge_viewport.gd` id `PASSTHROUGH_ITEM` 102) makes the Forge SubViewport render the edited scene's World3D, with the view's `_world` at the part's orthonormalized global transform. Scale is left out and the view says so.
+     - The view's WorldEnvironment is taken out while the scene world has an environment (the editor's preview counts).
+     - Its head and top lights go off while a visible Light3D outside the view shares that world (the preview sun counts).
+     - The grid turns off (Display > Grid brings it back) and comes back as it was.
+     - The part's baked nodes are hidden with `RenderingServer.instance_set_visible` only, so `visible`, the undo history and the scene are untouched.
+     - Picking still sees only the part.
+   - **Glue** (`forge_workspace.gd sync_passthrough`):
+     - It attaches when Passthrough is on, the tab is shown and the part is in the edited 3D scene.
+     - It detaches on the tab hidden, part or scene changes and plugin exit.
+     - It follows the part when it moves and re-hides baked nodes after rebakes (`SceneTree.node_added`).
+     - The setting is saved in project metadata `holo_forge/passthrough` (`passthrough_store`).
+   - **Part-space rule:** all Forge math is in `_world`-local space.
+     - Use the helpers `world_transform()`, `to_world()`, `from_world()`, `camera_transform()`, `camera_position()` and `camera_basis()`.
+     - `project()` and `ray_from()` are computed in part space; Godot's float32 path drifts 0.44 px at 400 m.
+     - The section shaders take a `world_to_part` uniform.
+     - The user argument `--holo-forge-test-world-offset` moves `_world` off its origin. Every test and hook must pass with it too.
+   - **Engine gotchas:**
+     - Toggling `own_world_3d` in the tree prints "scenario is null", so the view keeps its own `_private_world` and swaps `world_3d`.
+     - Far 4000 over a tiny near breaks the frustum ("create_frustum_points") and the scene is culled, so far/near stays within `PASSTHROUGH_DEPTH_RANGE` (2e5): near moves out up to a fifth of the orbit distance, then far comes in.
+   - **Tests:**
+     - `tests/holo_forge_passthrough_test.gd` (headless, both modes).
+     - `tests/holo_forge_passthrough_render_test.gd` (windowed; Forward+ and Compatibility). It covers the scene wall and sky around the part, a scene board in front hiding it, no double draw, and off restoring the view's own background.
+     - The new 13th hook `--holo-forge-passthrough-editor-test` builds `tests/holo_forge/passthrough_editor_test.tscn`. It clicks Display, switches to the 3D tab and back, picks the part, and checks for no undo step and the hook guard.
+   - **Offset run (2026-11-18):** every headless test and 12 hooks pass with `--holo-forge-test-world-offset`.
+     - It found one test assumption, in `holo_forge_form_editor_fix_checks.gd` (window visibility used the camera's global position), and fixed it.
+     - Backups from before the change are in scratchpad `backup_passthrough\`.
+   - **Gate (2026-11-18, 15:21-15:54, sequential, normal mode):** 67/70 headless tests pass. The other three are the two window-only render tests, which pass windowed, and `mesh_save_faults`, whose 10 parse errors are its deliberate missing files. All 13 editor hooks pass, and all 4 windowed runs (background and passthrough render, Forward+ and Compatibility) pass with no engine errors. validate_project shows the known 6.
+
 **Optional small item:** heads-up length and angle fields while drawing lines. Its work order is `docs/holo_forge/heads_up_fields_work_order.md`. The full dimension spec is `docs/holo_forge/dimension_spec.md`.
 
 ## Known limits, already accepted

@@ -447,7 +447,7 @@ func _check_sketch_palette() -> void:
 	editor.selection.clear()
 	ws.viewport.orbit(Vector2(120, 60))
 	await _press_in_palette(palette, labels["Look At"])
-	var facing: Vector3 = ws.viewport.camera().global_transform.basis.z
+	var facing: Vector3 = ws.viewport.camera_basis().z
 	_expect(absf(facing.dot(Vector3.UP)) > 0.999, "Look At should face the ground-plane sketch (%s)." % facing)
 	_expect(int(ws.result.sketches[feature.id].solve.dof) > 0, "The rectangle should start with free sizes.")
 	await _press_in_palette(palette, labels["Fully Define"])

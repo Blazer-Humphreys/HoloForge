@@ -283,9 +283,9 @@ func _check_followers() -> bool:
 	ok = _expect(cap_node != null, "The section cap on the Lever should follow the Lever (%s)." % [followers]) and ok
 	if decal_node != null:
 		var local := APPEARANCE.decal_transform(decal)
-		ok = _expect(decal_node.global_transform.is_equal_approx(t * local), "The decal should sit at pose x its place (%s vs %s)." % [decal_node.global_transform, t * local]) and ok
+		ok = _expect(_in_part(view, decal_node).is_equal_approx(t * local), "The decal should sit at pose x its place (%s vs %s)." % [_in_part(view, decal_node), t * local]) and ok
 	if cap_node != null:
-		ok = _expect(cap_node.global_transform.is_equal_approx(t), "The cap should move with the Lever (%s)." % [cap_node.global_transform]) and ok
+		ok = _expect(_in_part(view, cap_node).is_equal_approx(t), "The cap should move with the Lever (%s)." % [_in_part(view, cap_node)]) and ok
 	# The clip plane of the Lever's section is the analysis plane carried by the pose; the Base's
 	# stays where it is.
 	var lever_material := view.body_surface(lever_body).material_override as ShaderMaterial
@@ -301,7 +301,7 @@ func _check_followers() -> bool:
 	var other := XFORM.compose(XFORM.translation(-0.02, 0.0, 0.01), XFORM.rot_z(-0.4))
 	view.set_body_poses(_hand_solve(other))
 	if decal_node != null:
-		ok = _expect(decal_node.global_transform.is_equal_approx(XFORM.to_transform(other) * APPEARANCE.decal_transform(decal)), "The decal should follow a new pose.") and ok
+		ok = _expect(_in_part(view, decal_node).is_equal_approx(XFORM.to_transform(other) * APPEARANCE.decal_transform(decal)), "The decal should follow a new pose.") and ok
 	ws.change("Remove Decal and Section", func() -> void:
 		doc.decals = doc.decals.filter(func(d: Dictionary) -> bool: return str(d.get("id", "")) != "decal_v")
 		doc.analyses = doc.analyses.filter(func(a: Dictionary) -> bool: return str(a.get("id", "")) != "analysis_v"))
@@ -602,3 +602,9 @@ func _expect(condition: bool, message: String) -> bool:
 		push_error(message)
 		print("FAIL: ", message)
 	return condition
+
+
+## A node's place in the part's space (the view's world may be moved: Passthrough, or the
+## --holo-forge-test-world-offset test argument).
+func _in_part(view: Object, node: Node3D) -> Transform3D:
+	return (view.world_transform() as Transform3D).affine_inverse() * node.global_transform

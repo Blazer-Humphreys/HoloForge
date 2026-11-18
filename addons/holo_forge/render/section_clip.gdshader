@@ -6,13 +6,16 @@ render_mode cull_disabled;
 
 uniform vec3 plane_origin = vec3(0.0);
 uniform vec3 plane_normal = vec3(1.0, 0.0, 0.0);
+// The view's world back to the part's space (the plane is given there): identity unless the
+// view is moved, as by Passthrough.
+uniform mat4 world_to_part = mat4(1.0);
 uniform vec3 base_color : source_color = vec3(0.72, 0.74, 0.78);
 uniform vec3 inside_color : source_color = vec3(0.3, 0.31, 0.35);
 
 varying vec3 world_position;
 
 void vertex() {
-	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	world_position = (world_to_part * MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 
 void fragment() {

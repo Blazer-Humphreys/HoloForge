@@ -211,7 +211,7 @@ func _counts(body_id: String) -> Vector3i:
 
 
 func _camera_position() -> Vector3:
-	return ws.viewport.camera().global_position
+	return ws.viewport.camera_position()
 
 
 ## The limit point and normal at the centre of a cage face.

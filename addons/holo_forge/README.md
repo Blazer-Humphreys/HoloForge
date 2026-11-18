@@ -54,6 +54,23 @@ Parametric CAD inside the Godot editor. Holo Forge adds a **Forge** tab next to 
 
 Press **S** in the Forge tab to search every command by name.
 
+## Passthrough
+
+Passthrough shows the part where it stands in its 3D scene while you model it.
+
+1. In the **3D** tab, place the CadPart where you want it in the scene.
+2. Select it, open the **Forge** tab, and tick **Display > Passthrough** in the view's bar.
+
+Now the view draws the rest of the scene around the part, with the scene's own lights, sky and shaders, as the 3D tab would. Modeling works as usual:
+- Only the part can be picked. Clicks go through the scene's objects, but objects in front of the part still hide it.
+- The part's baked nodes in the scene are hidden while the Forge view draws the live part in their place. This is only on screen and doesn't change the scene.
+- The Forge grid turns off while Passthrough is on (**Display > Grid** turns it back on) and comes back as it was afterwards.
+- If the scene has no light or sky of its own (and the editor's preview sun and sky are off), the Forge's own light and sky are used.
+- The part shows at its modelled size. A scale on the part, or on a node above it, is left out, and the view says so.
+- Very close to a small part, the farthest part of the scene may be cut off. The view keeps its depth range within what it can draw cleanly.
+
+Passthrough is saved per project. It turns off by itself on the 3D tab, and comes back when you return to the Forge tab.
+
 ## Settings
 
 **Project Settings > Holo Forge > Export > Board Models Folder** is the folder that **Save Board Model Version** saves versioned models into. Leave it empty if you don't use that command.

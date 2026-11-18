@@ -35,6 +35,8 @@ signal context_requested(screen_position: Vector2)
 signal manipulator_changed(handle: Dictionary, value: Variant)
 signal manipulator_released(handle: Dictionary)
 signal camera_changed
+## Display > Passthrough was clicked: on is what the user asked for (the workspace decides).
+signal passthrough_requested(on: bool)
 
 enum NavMode { SELECT, ORBIT, PAN, ZOOM }
 
@@ -56,6 +58,18 @@ const SLIDE_PX := 70.0
 const DOF_GRAB_PX := 8.0
 ## The node name of the glyph layer (spec C7.1).
 const GLYPH_LAYER := "AssemblyGlyphs"
+## A user argument that moves the view's world off the origin (the part's space then sits at
+## TEST_WORLD_OFFSET in the world the camera renders, as in Passthrough), so tests prove every
+## point the view takes and gives stays in the part's space.
+const TEST_WORLD_OFFSET_ARG := "--holo-forge-test-world-offset"
+static var TEST_WORLD_OFFSET := Transform3D(Basis(Vector3(0.3, 1.0, 0.2).normalized(), deg_to_rad(37.0)), Vector3(12.5, -3.0, 40.0))
+## How far the camera sees in Passthrough at the least (meters), when the editor has no setting.
+const PASSTHROUGH_FAR := 4000.0
+## The most far may be over near in Passthrough (the view alone uses 200 / 0.001).
+const PASSTHROUGH_DEPTH_RANGE := 200000.0
+## The Display menu's Passthrough item and what it says.
+const PASSTHROUGH_ITEM := 102
+const PASSTHROUGH_TIP := "Show the part where it stands in its 3D scene, lit by the scene. Only the part can be picked."
 
 ## (InputEventKey) -> bool; the workspace handles shortcuts and returns true when it used the key.
 var key_handler: Callable
@@ -156,6 +170,17 @@ var _glyph_drawer := Callable()
 ## Start ghosts of bodies (set_ghost_bodies) and their material.
 var _ghost_root: Node3D
 var _ghost_material: StandardMaterial3D
+## The view's own lights and sky, which Passthrough takes away while the scene's light it.
+var _head_light: DirectionalLight3D
+var _top_light: DirectionalLight3D
+var _environment_node: WorldEnvironment
+## Passthrough as set (set_passthrough): {"world": World3D, "part": Transform3D, "hidden":
+## [VisualInstance3D], "env_removed": bool, "lights_off": bool, "far": float}; {} when off.
+var _passthrough := {}
+## The view's own world, which it renders when Passthrough is off.
+var _private_world := World3D.new()
+## Where the part's space sits in the world the camera renders when Passthrough is off.
+var _home_world := Transform3D.IDENTITY
 
 
 func _init() -> void:
@@ -175,7 +200,9 @@ func _init() -> void:
 	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(container)
 	_viewport = SubViewport.new()
-	_viewport.own_world_3d = true
+	# A world of its own, set (not own_world_3d): Passthrough swaps it for the scene's and back, and
+	# turning own_world_3d off or on while in the tree makes the engine report a missing scenario.
+	_viewport.world_3d = _private_world
 	_viewport.msaa_3d = Viewport.MSAA_4X
 	# The background gradient is long and shallow: dithered, it shows no bands.
 	_viewport.use_debanding = true
@@ -186,22 +213,25 @@ func _init() -> void:
 	_world.name = "ForgeWorld"
 	_world.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_viewport.add_child(_world)
+	if TEST_WORLD_OFFSET_ARG in OS.get_cmdline_user_args():
+		_home_world = TEST_WORLD_OFFSET
+	_world.transform = _home_world
 	_camera = Camera3D.new()
 	_camera.fov = FOV
 	_camera.near = 0.0005
 	_camera.far = 2000.0
 	_world.add_child(_camera)
-	var head_light := DirectionalLight3D.new()
-	head_light.light_energy = 0.85
-	head_light.rotation = Vector3(-0.35, 0.3, 0)
-	_camera.add_child(head_light)
-	var top_light := DirectionalLight3D.new()
-	top_light.light_energy = 0.35
-	top_light.rotation = Vector3(-PI * 0.5, 0, 0)
-	_world.add_child(top_light)
-	var env := WorldEnvironment.new()
-	env.environment = _make_environment()
-	_world.add_child(env)
+	_head_light = DirectionalLight3D.new()
+	_head_light.light_energy = 0.85
+	_head_light.rotation = Vector3(-0.35, 0.3, 0)
+	_camera.add_child(_head_light)
+	_top_light = DirectionalLight3D.new()
+	_top_light.light_energy = 0.35
+	_top_light.rotation = Vector3(-PI * 0.5, 0, 0)
+	_world.add_child(_top_light)
+	_environment_node = WorldEnvironment.new()
+	_environment_node.environment = _make_environment()
+	_world.add_child(_environment_node)
 	_viewport.size_changed.connect(_update_background_height)
 	_update_background_height()
 
@@ -253,6 +283,12 @@ func _init() -> void:
 
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		# The scene's hidden nodes show again, and the view's sky, if taken out, goes with the view.
+		clear_passthrough()
+		if is_instance_valid(_environment_node) and _environment_node.get_parent() == null:
+			_environment_node.free()
+		return
 	if what == NOTIFICATION_RESIZED and _nav_bar != null:
 		_nav_bar.reset_size()
 		_nav_bar.position = Vector2((size.x - _nav_bar.size.x) * 0.5, size.y - _nav_bar.size.y - 8)
@@ -263,8 +299,193 @@ func overlay() -> Control:
 	return _overlay
 
 
+## The view's camera. Its global transform is in the world the camera renders, which is not the
+## part's space when the view is moved (Passthrough): use camera_transform(), camera_position()
+## and camera_basis() for the part's space, and project() / ray_from() to go to and from the screen.
 func camera() -> Camera3D:
 	return _camera
+
+
+# --- The part's space and the world ---------------------------------------------------------
+# Everything the view draws sits under _world, in the part's space, and every point the view
+# takes or gives (project, ray_from, picks, handles, region planes) is in that space. _world's own
+# transform places the part's space in the world the camera renders: identity, the part's place in
+# the scene (Passthrough), or TEST_WORLD_OFFSET in tests.
+
+## Where the part's space sits in the world the camera renders (rigid).
+func world_transform() -> Transform3D:
+	return _world.transform
+
+
+## A point of the part's space in the rendered world.
+func to_world(point: Vector3) -> Vector3:
+	return _world.transform * point
+
+
+## A point of the rendered world in the part's space.
+func from_world(point: Vector3) -> Vector3:
+	return _world.transform.affine_inverse() * point
+
+
+## The camera in the part's space (it is a child of _world).
+func camera_transform() -> Transform3D:
+	return _camera.transform
+
+
+func camera_position() -> Vector3:
+	return _camera.transform.origin
+
+
+func camera_basis() -> Basis:
+	return _camera.transform.basis
+
+
+## Moves the part's space in the rendered world (rigid; the camera keeps its place in the part's
+## space). The section shaders take the change, and the screen is drawn again.
+func _set_world_transform(t: Transform3D) -> void:
+	_world.transform = t
+	_sync_world_to_part()
+	_update_camera()
+
+
+## Gives every section shader in the view the world-to-part transform (the clip planes are in the
+## part's space; the shaders cut in world coordinates).
+func _sync_world_to_part(root: Node = null) -> void:
+	var to_part := Projection(_world.transform.affine_inverse())
+	for node in (root if root != null else _world).find_children("*", "GeometryInstance3D", true, false):
+		var geometry := node as GeometryInstance3D
+		_part_space_material(geometry.material_override, to_part)
+		var mesh_instance := geometry as MeshInstance3D
+		if mesh_instance != null:
+			for s in mesh_instance.get_surface_override_material_count():
+				_part_space_material(mesh_instance.get_surface_override_material(s), to_part)
+			if mesh_instance.mesh != null:
+				for s in mesh_instance.mesh.get_surface_count():
+					_part_space_material(mesh_instance.mesh.surface_get_material(s), to_part)
+
+
+## The same for one node's materials, when the part's space is moved (new section materials start
+## at identity, which is right otherwise).
+func _sync_if_moved(node: Node) -> void:
+	if node == null or _world.transform == Transform3D.IDENTITY:
+		return
+	var to_part := Projection(_world.transform.affine_inverse())
+	var geometry := node as GeometryInstance3D
+	if geometry != null:
+		_part_space_material(geometry.material_override, to_part)
+	_sync_world_to_part(node)
+
+
+func _part_space_material(material: Material, to_part: Projection) -> void:
+	while material != null:
+		var shader_material := material as ShaderMaterial
+		if shader_material != null and shader_material.shader != null and _is_section_shader(shader_material.shader):
+			shader_material.set_shader_parameter("world_to_part", to_part)
+		material = material.next_pass
+
+
+func _is_section_shader(shader: Shader) -> bool:
+	return shader == ANALYSIS.SECTION_SHADER or shader == SECTION_EDGES_SHADER or shader == ANALYSIS.SECTION_HIGHLIGHT_SHADER or (shader == _section_highlight_back and shader != null)
+
+
+# --- Passthrough -----------------------------------------------------------------------------
+
+## Shows the part inside its scene: the view renders scene_world (the edited scene's world) with
+## the part's space placed at part_transform (its global transform; scale is left out, so the part
+## shows at its modelled size where it stands). hidden: the part's baked children in the scene,
+## hidden from rendering (not their visible property) while the view's own bodies show in their
+## place. The view's sky is taken out when the scene world has an environment, and its lights are
+## turned off when scene_has_lights. Picking still sees only the part's bodies.
+func set_passthrough(scene_world: World3D, part_transform: Transform3D, hidden: Array, scene_has_lights: bool) -> void:
+	if scene_world == null:
+		clear_passthrough()
+		return
+	if not _passthrough.is_empty() and _passthrough.world != scene_world:
+		clear_passthrough()
+	if _passthrough.is_empty():
+		# The scene's sky (its own, or the editor's preview) is read before the view joins its
+		# world; the view's sky leaves first so it never stands in for the scene's.
+		var env_removed := scene_world.environment != null
+		if env_removed:
+			_world.remove_child(_environment_node)
+		_viewport.world_3d = scene_world
+		_passthrough = {"world": scene_world, "hidden": [], "env_removed": env_removed, "lights_off": false, "grid_was": grid_visible}
+		# The grid would float at the part's base across the scene: off (Display > Grid brings it
+		# back), and as it was when Passthrough ends.
+		set_grid_visible(false)
+	_passthrough.lights_off = scene_has_lights
+	_head_light.visible = not scene_has_lights
+	_top_light.visible = not scene_has_lights
+	set_passthrough_hidden(hidden)
+	_passthrough.part = part_transform.orthonormalized()
+	_passthrough.scale = part_transform.basis.get_scale()
+	_set_world_transform(_passthrough.part)
+
+
+## Hides these scene nodes from rendering while Passthrough is on (and shows again any it hid
+## before that are not in the list): the part's baked children, which the view's bodies replace.
+func set_passthrough_hidden(hidden: Array) -> void:
+	if _passthrough.is_empty():
+		return
+	var keep := {}
+	for node in hidden:
+		var visual := node as VisualInstance3D
+		if visual != null and is_instance_valid(visual) and visual.is_inside_tree():
+			keep[visual] = true
+			RenderingServer.instance_set_visible(visual.get_instance(), false)
+	for node in _passthrough.hidden:
+		if is_instance_valid(node) and not keep.has(node):
+			_show_scene_node(node)
+	_passthrough.hidden = keep.keys()
+
+
+## Back to the view's own world, sky and lights; the scene's hidden nodes show as they are.
+func clear_passthrough() -> void:
+	if _passthrough.is_empty():
+		return
+	for node in _passthrough.hidden:
+		if is_instance_valid(node):
+			_show_scene_node(node)
+	var env_removed := bool(_passthrough.env_removed)
+	var grid_was := bool(_passthrough.get("grid_was", grid_visible))
+	_passthrough = {}
+	set_grid_visible(grid_was)
+	_viewport.world_3d = _private_world
+	# The view's sky comes back only once it has its own world again.
+	if env_removed:
+		_world.add_child(_environment_node)
+	_head_light.visible = true
+	_top_light.visible = true
+	_set_world_transform(_home_world)
+
+
+func passthrough_on() -> bool:
+	return not _passthrough.is_empty()
+
+
+## Passthrough as it stands (for tests): {"world", "part", "scale", "hidden", "env_removed",
+## "lights_off"}, or {} when off.
+func passthrough_state() -> Dictionary:
+	return _passthrough.duplicate()
+
+
+## Display > Passthrough shows checked when the user turned it on; blocker says why it can't show
+## now ("" when it can), as its tooltip. It can't be turned on while blocked.
+func set_passthrough_menu(checked: bool, blocker: String) -> void:
+	if _style_menu == null:
+		return
+	var popup := _style_menu.get_popup()
+	var index := popup.get_item_index(PASSTHROUGH_ITEM)
+	if index < 0:
+		return
+	popup.set_item_checked(index, checked)
+	popup.set_item_disabled(index, blocker != "" and not checked)
+	popup.set_item_tooltip(index, blocker if blocker != "" else PASSTHROUGH_TIP)
+
+
+static func _show_scene_node(node: VisualInstance3D) -> void:
+	if node.is_inside_tree():
+		RenderingServer.instance_set_visible(node.get_instance(), node.is_visible_in_tree())
 
 
 # --- Bodies and highlights ---------------------------------------------------------------
@@ -513,6 +734,8 @@ func _pose_section(body_id: String) -> void:
 	if edges != null and edges.shader == SECTION_EDGES_SHADER:
 		edges.set_shader_parameter("plane_origin", origin)
 		edges.set_shader_parameter("plane_normal", normal)
+	_sync_if_moved(surface)
+	_sync_if_moved(nodes.edges)
 
 
 ## Draws start ghosts (spec 6.2): [{"body": id, "transform": Transform3D}] shows each body's
@@ -631,6 +854,8 @@ func set_analysis_display(display: Dictionary) -> void:
 			edges.material_override = clip
 			# A posed body: its clip plane where it shows.
 			_pose_section(id)
+		_sync_if_moved(surface)
+		_sync_if_moved(edges)
 	if clips_changed:
 		_refresh_highlights()
 	var version := int(display.get("version", -1))
@@ -889,6 +1114,9 @@ func set_origin_visibility(visibility: Dictionary) -> void:
 func set_grid_visible(value: bool) -> void:
 	grid_visible = value
 	_grid.visible = value
+	if _style_menu != null:
+		var popup := _style_menu.get_popup()
+		popup.set_item_checked(popup.get_item_index(101), value)
 
 
 # --- Appearance ------------------------------------------------------------------------------
@@ -1007,7 +1235,7 @@ func orbit(delta_px: Vector2) -> void:
 
 func pan(delta_px: Vector2) -> void:
 	var per_px := _world_per_pixel()
-	var basis := _camera.global_transform.basis
+	var basis := camera_basis()
 	target += (-basis.x * delta_px.x + basis.y * delta_px.y) * per_px
 	_update_camera()
 
@@ -1015,7 +1243,8 @@ func pan(delta_px: Vector2) -> void:
 ## Zooms by steps (positive zooms in) keeping the point under screen_position fixed.
 func zoom_at(steps: float, screen_position: Vector2) -> void:
 	var factor := pow(0.87, steps)
-	var anchor = MANIPULATOR.on_plane(target, _camera.global_transform.basis.z, _camera.project_ray_origin(screen_position), _camera.project_ray_normal(screen_position))
+	var ray := ray_from(screen_position)
+	var anchor = MANIPULATOR.on_plane(target, camera_basis().z, ray[0], ray[1])
 	distance = clampf(distance * factor, 0.0005, 500.0)
 	if anchor != null:
 		target = (anchor as Vector3).lerp(target, factor)
@@ -1081,15 +1310,47 @@ func set_view_state(state: Dictionary) -> void:
 	_update_camera()
 
 
-## Screen position of a world point (INF when behind the camera).
+## Screen position of a point of the part's space (INF when behind the camera, or nearer than its
+## near plane, as Camera3D.is_position_behind). Worked out in the part's space from the camera's
+## own settings (as Camera3D.unproject_position does, height kept), not through the rendered
+## world, so a part placed far out in a scene keeps its precision.
 func project(point: Vector3) -> Vector2:
-	if _camera.is_position_behind(point):
+	var local := _camera.transform.affine_inverse() * point
+	if -local.z < _camera.near:
 		return Vector2(INF, INF)
-	return _camera.unproject_position(point)
+	var px := _view_px()
+	var half := _half_view()
+	var depth := 1.0 if ortho else -local.z
+	var ndc := Vector2(local.x / (half.x * depth), local.y / (half.y * depth))
+	return Vector2((ndc.x * 0.5 + 0.5) * px.x, (0.5 - ndc.y * 0.5) * px.y)
 
 
+## The ray under a screen position in the part's space: [origin, unit direction] (as
+## Camera3D.project_ray_origin / project_ray_normal: the camera's place in perspective, the near
+## plane in orthographic).
 func ray_from(screen_position: Vector2) -> Array:
-	return [_camera.project_ray_origin(screen_position), _camera.project_ray_normal(screen_position)]
+	var px := _view_px()
+	var ndc := Vector2(screen_position.x / px.x * 2.0 - 1.0, 1.0 - screen_position.y / px.y * 2.0)
+	var half := _half_view()
+	var t := _camera.transform
+	if ortho:
+		var origin := t * Vector3(ndc.x * half.x, ndc.y * half.y, -_camera.near)
+		return [origin, (-t.basis.z).normalized()]
+	return [t.origin, (t.basis * Vector3(ndc.x * half.x, ndc.y * half.y, -1.0)).normalized()]
+
+
+## The view's size in pixels (what the camera projects onto; at least one pixel).
+func _view_px() -> Vector2:
+	return Vector2(_viewport.size).max(Vector2.ONE)
+
+
+## Half the view's width and height: at depth 1 in perspective (tangents of the half angles, the
+## FOV being vertical), in meters in orthographic (the camera's size being its height).
+func _half_view() -> Vector2:
+	var px := _view_px()
+	var aspect := px.x / px.y
+	var half_height := _camera.size * 0.5 if ortho else tan(deg_to_rad(_camera.fov) * 0.5)
+	return Vector2(half_height * aspect, half_height)
 
 
 ## The selectable item at a screen position, honoring filters and priority.
@@ -1138,9 +1399,10 @@ func region_planes(rect: Rect2) -> Array:
 	var origins := []
 	var far := []
 	for corner in corners:
-		var from := _camera.project_ray_origin(corner)
+		var ray := ray_from(corner)
+		var from: Vector3 = ray[0]
 		origins.append(from)
-		far.append(from + _camera.project_ray_normal(corner))
+		far.append(from + (ray[1] as Vector3))
 	var inside: Vector3 = ((far[0] as Vector3) + (far[1] as Vector3) + (far[2] as Vector3) + (far[3] as Vector3)) * 0.25
 	var planes := []
 	for i in 4:
@@ -1155,8 +1417,8 @@ func region_planes(rect: Rect2) -> Array:
 		if plane.distance_to(inside) > 0.0:
 			plane = -plane
 		planes.append(plane)
-	var forward := -_camera.global_transform.basis.z
-	planes.append(Plane(-forward, _camera.global_position - forward * 1e-6) if not ortho else Plane(-forward, _camera.global_position - forward * _camera.far))
+	var forward := -camera_basis().z
+	planes.append(Plane(-forward, camera_position() - forward * 1e-6) if not ortho else Plane(-forward, camera_position() - forward * _camera.far))
 	return planes
 
 
@@ -1198,6 +1460,14 @@ func _update_camera() -> void:
 		_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
 	_camera.near = maxf(distance * 0.001, 0.00005)
 	_camera.far = maxf(distance * 200.0, 10.0)
+	if not _passthrough.is_empty():
+		# The scene reaches as far as the editor's own view does. Far over near stays within what
+		# the view uses alone (PASSTHROUGH_DEPTH_RANGE): past it the engine can't work out the
+		# camera's frustum in single precision and culls the scene. So near moves out (up to a fifth
+		# of the way to the orbit point), and when that isn't enough far comes in.
+		var reach := _passthrough_far()
+		_camera.near = maxf(_camera.near, minf(distance * 0.2, reach / PASSTHROUGH_DEPTH_RANGE))
+		_camera.far = maxf(_camera.far, minf(reach, _camera.near * PASSTHROUGH_DEPTH_RANGE))
 	if _view_cube != null:
 		_view_cube.set_camera_basis(basis)
 	_update_grid()
@@ -1207,6 +1477,14 @@ func _update_camera() -> void:
 	if _glyph_layer != null:
 		_glyph_layer.queue_redraw()
 	camera_changed.emit()
+
+
+static func _passthrough_far() -> float:
+	if Engine.is_editor_hint() and Engine.has_singleton("EditorInterface"):
+		var settings: Object = (Engine.get_singleton("EditorInterface") as Object).call("get_editor_settings")
+		if settings != null and settings.call("has_setting", "editors/3d/default_z_far"):
+			return float(settings.call("get_setting", "editors/3d/default_z_far"))
+	return PASSTHROUGH_FAR
 
 
 func _world_per_pixel() -> float:
@@ -1425,8 +1703,9 @@ func _is_visible(point: Vector3) -> bool:
 	var screen := project(point)
 	if not screen.is_finite():
 		return false
-	var from := _camera.project_ray_origin(screen)
-	var dir := _camera.project_ray_normal(screen)
+	var ray := ray_from(screen)
+	var from: Vector3 = ray[0]
+	var dir: Vector3 = ray[1]
 	var hit := PICKING.ray_hit(_pickable, from, dir)
 	if hit.is_empty():
 		return true
@@ -1525,7 +1804,7 @@ func _handle_screen_shape(handle: Dictionary) -> Dictionary:
 func _depth_scale(point: Vector3) -> float:
 	if ortho:
 		return 1.0
-	var depth := -(_camera.global_transform.affine_inverse() * point).z
+	var depth := -(camera_transform().affine_inverse() * point).z
 	return maxf(depth, 0.0001) / maxf(distance, 0.0001)
 
 
@@ -1697,8 +1976,8 @@ func _draw_boundaries() -> void:
 	if not _boundary_lines_valid:
 		_boundary_lines_valid = true
 		_boundary_lines = PackedVector2Array()
-		var eye := _camera.global_position
-		var forward := -_camera.global_transform.basis.z
+		var eye := camera_position()
+		var forward := -camera_basis().z
 		for body_id in _boundary_segments:
 			var points: PackedVector3Array = _boundary_segments[body_id]
 			var mesh: RefCounted = (_prepared.get(body_id, {}) as Dictionary).get(PICKING.MESH_KEY)
@@ -1869,6 +2148,7 @@ func _add_highlight(body_id: String, faces: PackedInt32Array, look: String) -> v
 	if not clip.is_empty():
 		mesh_instance.set_meta("clip", clip)
 		_place_clip(mesh_instance)
+		_sync_if_moved(mesh_instance)
 	_highlight_root.add_child(mesh_instance)
 
 
@@ -2046,7 +2326,12 @@ func _make_nav_bar() -> HBoxContainer:
 	popup.add_check_item("Orthographic", 100)
 	popup.add_check_item("Grid", 101)
 	popup.set_item_checked(popup.get_item_index(101), true)
+	popup.add_check_item("Passthrough", PASSTHROUGH_ITEM)
+	popup.set_item_tooltip(popup.get_item_index(PASSTHROUGH_ITEM), PASSTHROUGH_TIP)
 	popup.id_pressed.connect(func(id: int) -> void:
+		if id == PASSTHROUGH_ITEM:
+			passthrough_requested.emit(not popup.is_item_checked(popup.get_item_index(PASSTHROUGH_ITEM)))
+			return
 		if id < STYLES.size():
 			set_style(STYLES.keys()[id])
 		elif id == 100:

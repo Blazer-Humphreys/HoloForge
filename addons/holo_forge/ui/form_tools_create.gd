@@ -687,7 +687,7 @@ static func run_face(ctx: Dictionary, picks: Dictionary, values: Dictionary) -> 
 	var camera: Vector3 = Vector3(0.0, 0.0, 1e6)
 	var editor: Object = ctx.get("editor")
 	if editor != null and editor.viewport != null and editor.viewport.camera() != null:
-		camera = editor.viewport.camera().global_position
+		camera = editor.viewport.camera_position()
 	return build_face(cages, corners, camera)
 
 

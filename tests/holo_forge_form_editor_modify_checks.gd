@@ -317,7 +317,7 @@ class Checks:
 		await frames(1)
 		# A click right at an edge's middle snaps to t = 0.5.
 		var topo := CAGE.topology(cube)
-		var cam: Vector3 = ws.viewport.camera().global_position
+		var cam: Vector3 = ws.viewport.camera_position()
 		var snapped := false
 		for e in topo.nE:
 			var ab := topo.edge_vertices(e)

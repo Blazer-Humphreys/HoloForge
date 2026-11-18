@@ -300,7 +300,7 @@ func look(target: Vector3, yaw: float, pitch: float, distance: float) -> void:
 ## Returns false when no framing tried frees them all.
 func clear_view(points: Array) -> bool:
 	var state: Dictionary = ws.viewport.view_state()
-	var right: Vector3 = ws.viewport.camera().global_transform.basis.x
+	var right: Vector3 = ws.viewport.camera_basis().x
 	for back in [1.0, 1.4, 2.0]:
 		for side in [0.0, 0.1, 0.2, 0.3, -0.1, -0.2, 0.4]:
 			var d: float = float(state.distance) * back

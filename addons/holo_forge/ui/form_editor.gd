@@ -1176,10 +1176,9 @@ func _visible(entry: Dictionary, mode: String, points: PackedVector3Array) -> Pa
 		all.resize(points.size())
 		all.fill(1)
 		return all
-	var cam: Camera3D = viewport.camera()
-	var view_dir: Vector3 = -cam.global_transform.basis.z if viewport.ortho else Vector3.ZERO
+	var view_dir: Vector3 = -viewport.camera_basis().z if viewport.ortho else Vector3.ZERO
 	var tolerance := maxf(float(entry.diag) * 2e-3, 1e-7)
-	return subd.visible(points, cam.global_position, view_dir, tolerance, 0 if mode == "smooth" else 1)
+	return subd.visible(points, viewport.camera_position(), view_dir, tolerance, 0 if mode == "smooth" else 1)
 
 
 func _draw_tool(overlay: Control) -> void:
@@ -3284,7 +3283,7 @@ func panel_spot(panel: Control, gizmo_rect: Rect2) -> Dictionary:
 func _frame_basis(verts: Dictionary) -> Basis:
 	match str(tool_values.get("space", "world")):
 		"view":
-			return viewport.camera().global_transform.basis.orthonormalized()
+			return viewport.camera_basis().orthonormalized()
 		"selection", "local":
 			var z := Vector3.ZERO
 			var points := PackedFloat64Array()

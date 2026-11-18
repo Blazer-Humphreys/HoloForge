@@ -130,7 +130,7 @@ func draw(overlay: Control, viewport: Object, colors: Dictionary, active := "") 
 		var color: Color = tone.call(id, axis_colors[i])
 		var ring := MANIPULATOR.ring_points(pivot, axis(i), (RING_PX * px) * wpp, 64)
 		# The ring's far half (behind the pivot from the camera) is drawn faint.
-		var toward: Vector3 = (viewport.camera().global_position - pivot).normalized()
+		var toward: Vector3 = (viewport.camera_position() - pivot).normalized()
 		var front := PackedVector2Array()
 		var back := PackedVector2Array()
 		for k in ring.size() - 1:
@@ -268,11 +268,11 @@ func begin_drag(id: String, viewport: Object, screen: Vector2) -> Dictionary:
 				v = _knob_dir(viewport, _axis_index(id))
 			state["vec0"] = v
 		"free":
-			var cam: Camera3D = viewport.camera()
-			var n := -cam.global_transform.basis.z
+			var view_basis: Basis = viewport.camera_basis()
+			var n := -view_basis.z
 			var at: Variant = MANIPULATOR.on_plane(pivot, n, ray[0], ray[1])
 			state["hit0"] = at if at != null else pivot
-			state["view_basis"] = cam.global_transform.basis
+			state["view_basis"] = view_basis
 	return state
 
 
@@ -443,12 +443,12 @@ func _scale_dash(viewport: Object, i: int, wpp: float) -> Array:
 
 ## Where a ring's knob sits: the ring point toward the camera's up (its right when the ring faces up).
 func _knob_dir(viewport: Object, i: int) -> Vector3:
-	var cam: Camera3D = viewport.camera()
+	var view_basis: Basis = viewport.camera_basis()
 	var a := axis(i)
-	var up := cam.global_transform.basis.y
+	var up := view_basis.y
 	var d := up - a * up.dot(a)
 	if d.length() < 1e-3:
-		var right := cam.global_transform.basis.x
+		var right := view_basis.x
 		d = right - a * right.dot(a)
 	return d.normalized()
 
