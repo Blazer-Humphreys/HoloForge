@@ -65,4 +65,6 @@ Run one `--editor` hook at a time. Each one prints `PASS` or `FAIL` and exits wi
 
 ## Licenses
 
-Holo Forge's own code is under the GNU General Public License version 3 (see [LICENSE](LICENSE)). The third-party libraries keep their own licenses (see `addons/holo_forge/THIRD_PARTY_NOTICES.md` and `addons/holo_forge/licenses/`). OpenCASCADE and planegcs are LGPL 2.1 and ship as separate DLLs that you may replace with your own builds.
+Holo Forge's own code is under the MIT License (see [LICENSE](LICENSE)) since 2026-11-18; the v0.1.0 and v0.1.1 releases were published under GPL-3.0. You can ship games that contain Holo Forge's scripts (baked parts use `nodes/cad_part.gd`) under any license you like, as long as you keep the MIT notice.
+
+The third-party libraries keep their own licenses (see `addons/holo_forge/THIRD_PARTY_NOTICES.md` and `addons/holo_forge/licenses/`). OpenCASCADE and planegcs are LGPL 2.1 and ship as separate DLLs that you may replace with your own builds. The editor alone uses them, and they are left out of game exports.

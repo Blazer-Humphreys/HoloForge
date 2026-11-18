@@ -70,4 +70,4 @@ The Appearance library starts with 11 built-in finishes: plastics, paints, metal
 
 ## Licenses
 
-Holo Forge itself: see `LICENSE.md`. The libraries it ships are under their own licenses: see `THIRD_PARTY_NOTICES.md` and the `licenses/` folder. OpenCASCADE and planegcs are LGPL. They are separate DLLs in `bin/`, and you may replace them with your own builds.
+Holo Forge itself is under the MIT License: see `LICENSE.md`. Your exported game may contain Holo Forge's scripts (baked parts use `nodes/cad_part.gd`); keep that notice with them, and the game can be under any license you like. The libraries it ships are under their own licenses: see `THIRD_PARTY_NOTICES.md` and the `licenses/` folder. OpenCASCADE and planegcs are LGPL. They are separate DLLs in `bin/`, and you may replace them with your own builds.
