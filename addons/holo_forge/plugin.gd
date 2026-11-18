@@ -20,6 +20,14 @@ const MESH_TEST_ARG := "--holo-forge-mesh-editor-test"
 const SAVE_TEST_ARG := "--holo-forge-save-editor-test"
 const ASSEMBLE_TEST_ARG := "--holo-forge-assemble-editor-test"
 const HANDLES_TEST_ARG := "--holo-forge-handles-editor-test"
+## The install self-test (self_test.gd): Project > Tools > SELF_TEST_MENU, or headless with
+## "-- --holo-forge-self-test [--holo-forge-self-test-log=<file>]", which quits with 0 or 1.
+const SELF_TEST := "res://addons/holo_forge/self_test.gd"
+const SELF_TEST_ARG := "--holo-forge-self-test"
+const SELF_TEST_LOG_ARG := "--holo-forge-self-test-log="
+const SELF_TEST_MENU := "Holo Forge: Run Self-Test"
+const VIDEO_TEST_ARG := "--holo-forge-video-editor-test"
+const MATERIALS_TEST_ARG := "--holo-forge-materials-editor-test"
 ## Editor hook runs ("-- --holo-forge-<name>-test") are kept off the user's project by this script:
 ## the user's open scenes are not opened, and a run that changes a file outside its own folders
 ## fails (tests/holo_forge_hook_guard.gd). HOOK_SESSION is what a hook that was killed leaves.
@@ -54,6 +62,9 @@ func _enter_tree() -> void:
 	add_custom_type("CadPart", "Node3D", CAD_PART, _icon("CSGCombiner3D"))
 	EditorInterface.get_selection().selection_changed.connect(workspace.on_editor_selection_changed)
 	scene_changed.connect(workspace.on_scene_changed)
+	add_tool_menu_item(SELF_TEST_MENU, _run_self_test_dialog)
+	if OS.get_cmdline_user_args().has(SELF_TEST_ARG):
+		_run_self_test_headless.call_deferred()
 	if OS.get_cmdline_user_args().has(TEST_ARG):
 		_editor_test_runner = load("res://tests/holo_forge_editor_test.gd").new()
 		_editor_test_runner.run.call_deferred(self)
@@ -90,6 +101,12 @@ func _enter_tree() -> void:
 	if OS.get_cmdline_user_args().has(HANDLES_TEST_ARG):
 		_editor_test_runner = load("res://tests/holo_forge_handles_editor_test.gd").new()
 		_editor_test_runner.run.call_deferred(self)
+	if OS.get_cmdline_user_args().has(VIDEO_TEST_ARG):
+		_editor_test_runner = load("res://tests/holo_forge_video_editor_test.gd").new()
+		_editor_test_runner.run.call_deferred(self)
+	if OS.get_cmdline_user_args().has(MATERIALS_TEST_ARG):
+		_editor_test_runner = load("res://tests/holo_forge_materials_editor_test.gd").new()
+		_editor_test_runner.run.call_deferred(self)
 
 
 func _exit_tree() -> void:
@@ -98,6 +115,7 @@ func _exit_tree() -> void:
 	if scene_changed.is_connected(workspace.on_scene_changed):
 		scene_changed.disconnect(workspace.on_scene_changed)
 	remove_custom_type("CadPart")
+	remove_tool_menu_item(SELF_TEST_MENU)
 	if is_instance_valid(workspace):
 		workspace.queue_free()
 	if _part_saver != null:
@@ -112,6 +130,34 @@ func _exit_tree() -> void:
 		if not changed.is_empty():
 			print("FAIL Holo Forge HOOK GUARD: %d file(s) outside the hook's own folders changed during this run: %s" % [changed.size(), ", ".join(changed)])
 			get_tree().quit(1)
+
+
+## Project > Tools > Holo Forge: Run Self-Test: runs the checks and shows the report.
+func _run_self_test_dialog() -> void:
+	var test: RefCounted = load(SELF_TEST).new()
+	var ok: bool = await test.run(self)
+	var dialog := AcceptDialog.new()
+	dialog.title = "Holo Forge Self-Test: %s" % ("passed" if ok else "FAILED")
+	dialog.dialog_text = test.report() + ("" if ok else "\n\nPlease post this report in the #bug-reports forum on the Holo Forge Discord (https://discord.gg/vRDFxNvZ77).")
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
+	EditorInterface.popup_dialog_centered(dialog)
+
+
+## The installer's run: prints the report, writes it to the log file if one was given, and quits
+## the editor with 0 (passed) or 1.
+func _run_self_test_headless() -> void:
+	var test: RefCounted = load(SELF_TEST).new()
+	var ok: bool = await test.run(self)
+	var report: String = test.report()
+	print(report)
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with(SELF_TEST_LOG_ARG):
+			var file := FileAccess.open(arg.trim_prefix(SELF_TEST_LOG_ARG), FileAccess.WRITE)
+			if file != null:
+				file.store_string(report + "\n")
+				file.close()
+	get_tree().quit(0 if ok else 1)
 
 
 ## Starts the guard of an editor hook run, or, in the user's editor, puts back what a hook that

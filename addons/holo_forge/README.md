@@ -23,6 +23,14 @@ Parametric CAD inside the Godot editor. Holo Forge adds a **Forge** tab next to 
 
 ## Install
 
+**With the installer (easiest):**
+
+1. Close Godot.
+2. Run `holo_forge-<version>-windows-setup.exe`. Windows may say "Windows protected your PC", because the installer isn't code-signed: click **More info > Run anyway**.
+3. Pick your project's folder (the one with `project.godot`) and your Godot editor program (4.7 or newer).
+4. Setup copies the addon into `addons/holo_forge`, imports the project, turns the plugin on and runs a quick self-test. An older Holo Forge in the project is moved to `holo_forge_backup/` first.
+5. Open the project: a **Forge** tab appears at the top of the editor.
+
 **From the zip (any project):**
 
 1. Close the project in Godot if it is open.
@@ -32,7 +40,9 @@ Parametric CAD inside the Godot editor. Holo Forge adds a **Forge** tab next to 
 4. **Project > Project Settings > Plugins**: tick **Holo Forge**.
 5. A **Forge** tab appears at the top of the editor.
 
-**To update:** close Godot, delete `addons/holo_forge`, unzip the new version, and open the project again. Your parts are kept: they live in your scenes and in the `<scene>_forge` folders next to them.
+**To update:** run the new installer, or close Godot, delete `addons/holo_forge`, unzip the new version, and open the project again. Your parts are kept: they live in your scenes and in the `<scene>_forge` folders next to them.
+
+**Check an install:** **Project > Tools > Holo Forge: Run Self-Test** sketches, extrudes, fillets and bakes a small part and shows what passed. If something fails, post the report in #bug-reports on the Holo Forge Discord.
 
 ## First part
 

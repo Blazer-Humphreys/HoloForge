@@ -2,7 +2,7 @@
 
     python package_release.py [--out <folder>]
 
-Writes two zips into --out (default C:/Users/Blaze/Holo Builds/holo_forge):
+Writes two zips and a setup program into --out (default C:/Users/Blaze/Holo Builds/holo_forge):
 
   holo_forge-<version>-windows.zip       addons/holo_forge/ as it goes into a project: unzip it in
                                         the project folder, or AssetLib > Import... in Godot.
@@ -10,6 +10,10 @@ Writes two zips into --out (default C:/Users/Blaze/Holo Builds/holo_forge):
                                         (planegcs as built, with Holo Forge's header shims and a
                                         CMakeLists.txt; the OpenCASCADE 8.0.1 source archive and the
                                         vcpkg port it was built with).
+  holo_forge-<version>-windows-setup.exe the same addon as a Windows installer (installer/
+                                        holo_forge_setup.iss, Inno Setup 6.3+): it puts the addon
+                                        into a project, turns the plugin on and runs the addon's
+                                        self-test. Skipped with --no-installer.
 
 The addon is copied from the game project (godot-board-racing/addons/holo_forge), leaving out what
 Godot makes by itself in each project (.import files) and what the editor leaves behind (~ copies
@@ -29,6 +33,8 @@ import fnmatch
 import hashlib
 import io
 import re
+import shutil
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -37,6 +43,10 @@ HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent / "godot-board-racing"
 ADDON = PROJECT / "addons" / "holo_forge"
 DEFAULT_OUT = Path("C:/Users/Blaze/Holo Builds/holo_forge")
+INSTALLER_SCRIPT = HERE / "installer" / "holo_forge_setup.iss"
+INSTALLER_STAGE = HERE / "build" / "installer_stage"
+ISCC_PLACES = [Path.home() / "AppData/Local/Programs/Inno Setup 6/ISCC.exe",
+               Path("C:/Program Files (x86)/Inno Setup 6/ISCC.exe"), Path("C:/Program Files/Inno Setup 6/ISCC.exe")]
 VS_REDIST = Path("C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Redist/MSVC")
 OCCT_ARCHIVE = Path("C:/Users/Blaze/holo_forge_build/vcpkg/downloads/Open-Cascade-SAS-OCCT-V8_0_1.tar.gz")
 OCCT_PORT = Path("C:/Users/Blaze/holo_forge_build/vcpkg/ports/opencascade")
@@ -159,7 +169,7 @@ def build_addon_zip(out: Path, version: str) -> Path:
 
 def check_addon(files: dict[str, bytes]) -> None:
     problems = []
-    for need in ["plugin.cfg", "plugin.gd", "holo_forge.gdextension", "README.md", "LICENSE.md", "THIRD_PARTY_NOTICES.md", "bin/holo_forge_native.dll"]:
+    for need in ["plugin.cfg", "plugin.gd", "self_test.gd", "holo_forge.gdextension", "README.md", "LICENSE.md", "THIRD_PARTY_NOTICES.md", "bin/holo_forge_native.dll"]:
         if "addons/holo_forge/" + need not in files:
             problems.append("missing " + need)
     shipped = {name.rsplit("/", 1)[-1].lower() for name in files if name.startswith("addons/holo_forge/bin/")}
@@ -191,6 +201,25 @@ def build_sources_zip(out: Path, version: str) -> Path:
     return target
 
 
+def build_installer(out: Path, version: str, addon_zip: Path) -> Path:
+    """The setup program, made by Inno Setup from exactly what is in the addon zip."""
+    iscc = next((place for place in ISCC_PLACES if place.is_file()), None) or shutil.which("ISCC")
+    if iscc is None:
+        sys.exit("Inno Setup 6 (ISCC.exe) isn't installed; install it, or pass --no-installer.")
+    if INSTALLER_STAGE.exists():
+        shutil.rmtree(INSTALLER_STAGE)
+    with zipfile.ZipFile(addon_zip) as archive:
+        archive.extractall(INSTALLER_STAGE)
+    target = out / ("holo_forge-%s-windows-setup.exe" % version)
+    command = [str(iscc), "/Q", "/DAppVersion=" + version, "/DAddonSource=" + str(INSTALLER_STAGE / "addons" / "holo_forge"),
+               "/O" + str(out), str(INSTALLER_SCRIPT)]
+    run = subprocess.run(command, capture_output=True, text=True)
+    if run.returncode != 0 or not target.is_file():
+        sys.exit("Inno Setup failed:\n" + run.stdout + run.stderr)
+    shutil.rmtree(INSTALLER_STAGE)
+    return target
+
+
 def write_zip(target: Path, files: dict[str, bytes]) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     partial = target.with_suffix(".zip.partial")
@@ -218,12 +247,20 @@ def sha256(path: Path) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--no-installer", action="store_true", help="make only the zips")
     args = parser.parse_args()
     version = plugin_version()
-    for made in [build_addon_zip(args.out, version), build_sources_zip(args.out, version)]:
-        with zipfile.ZipFile(made) as archive:
-            count = len(archive.namelist())
-        print("%s  %d files  %.1f MB  sha256 %s" % (made, count, made.stat().st_size / 1e6, sha256(made)))
+    addon_zip = build_addon_zip(args.out, version)
+    made = [addon_zip, build_sources_zip(args.out, version)]
+    if not args.no_installer:
+        made.append(build_installer(args.out, version, addon_zip))
+    for path in made:
+        if path.suffix == ".zip":
+            with zipfile.ZipFile(path) as archive:
+                detail = "%d files" % len(archive.namelist())
+        else:
+            detail = "installer"
+        print("%s  %s  %.1f MB  sha256 %s" % (path, detail, path.stat().st_size / 1e6, sha256(path)))
 
 
 if __name__ == "__main__":

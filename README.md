@@ -19,9 +19,15 @@ The kernel runs **in the editor only** (Windows 64-bit, Godot 4.7+). Exported ga
 
 ## Install the plugin
 
+The easiest way is the Windows installer from the [latest release](https://github.com/Blazer-Humphreys/HoloForge/releases/latest): run `holo_forge-<version>-windows-setup.exe`, pick your project and your Godot 4.7+ editor, and it copies the addon in, turns the plugin on and runs a self-test.
+
+By hand:
+
 1. Copy `addons/holo_forge` into your Godot project, so you have `<your project>/addons/holo_forge/plugin.cfg`.
 2. Open the project, then go to **Project > Project Settings > Plugins** and tick **Holo Forge**.
 3. A **Forge** tab appears at the top of the editor.
+
+To check an install, use **Project > Tools > Holo Forge: Run Self-Test** (`addons/holo_forge/self_test.gd`).
 
 Add `~*.dll` to your project's `.gitignore`: while the editor is open, Godot keeps a working copy of the kernel there.
 
@@ -41,7 +47,7 @@ cmake -S HoloForge/holo_forge_native -B build -G "Visual Studio 17 2022" -A x64 
 cmake --build build --config Release
 ```
 
-The first configure builds OpenCASCADE and the other libraries through vcpkg, which takes about an hour. The build copies `holo_forge_native.dll` and every DLL it needs into `HOLO_FORGE_ADDON_BIN_DIR`. `holo_forge_native/build.ps1` does the same with the original author's folders. `package_release.py` makes the release zip and the LGPL source zip.
+The first configure builds OpenCASCADE and the other libraries through vcpkg, which takes about an hour. The build copies `holo_forge_native.dll` and every DLL it needs into `HOLO_FORGE_ADDON_BIN_DIR`. `holo_forge_native/build.ps1` does the same with the original author's folders. `package_release.py` makes the release zip, the LGPL source zip and, with Inno Setup 6.3+ installed, the Windows installer (`holo_forge_native/installer/holo_forge_setup.iss`).
 
 ## Tests
 
