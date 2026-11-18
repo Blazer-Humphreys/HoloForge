@@ -19,8 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-This license covers Holo Forge's own files. The third-party libraries and
-sources in this repository keep their own licenses: see
-addons/holo_forge/THIRD_PARTY_NOTICES.md, addons/holo_forge/licenses/ and
-holo_forge_native/thirdparty/.
