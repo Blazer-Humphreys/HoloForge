@@ -63,6 +63,16 @@ godot --headless --path <project> --editor -- --holo-forge-handles-editor-test
 
 Run one `--editor` hook at a time. Each one prints `PASS` or `FAIL` and exits with 0 or 1.
 
+`holo_forge_background_render_test.gd` checks rendered pixels, so it needs a window (no `--headless`). Run it in both renderers, since the Forge view has to draw in Forward+ and in Compatibility projects:
+
+```bash
+godot --path <project> --rendering-method forward_plus --script res://tests/holo_forge_background_render_test.gd
+```
+
+```bash
+godot --path <project> --rendering-method gl_compatibility --script res://tests/holo_forge_background_render_test.gd
+```
+
 ## Licenses
 
 Holo Forge's own code is under the MIT License (see [LICENSE](LICENSE)) since 2026-11-18; the v0.1.0 and v0.1.1 releases were published under GPL-3.0. You can ship games that contain Holo Forge's scripts (baked parts use `nodes/cad_part.gd`) under any license you like, as long as you keep the MIT notice.

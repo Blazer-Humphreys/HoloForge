@@ -202,6 +202,8 @@ func _init() -> void:
 	var env := WorldEnvironment.new()
 	env.environment = _make_environment()
 	_world.add_child(env)
+	_viewport.size_changed.connect(_update_background_height)
+	_update_background_height()
 
 	_bodies_root = Node3D.new()
 	_world.add_child(_bodies_root)
@@ -2094,6 +2096,11 @@ func _make_environment() -> Environment:
 	env.ambient_light_energy = 0.7
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	return env
+
+
+## The background gradient spans the view's height in pixels (forge_background.gdshader).
+func _update_background_height() -> void:
+	_sky_material.set_shader_parameter("view_height", float(maxi(_viewport.size.y, 1)))
 
 
 func _make_materials() -> void:
