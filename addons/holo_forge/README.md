@@ -54,6 +54,20 @@ Parametric CAD inside the Godot editor. Holo Forge adds a **Forge** tab next to 
 
 Press **S** in the Forge tab to search every command by name.
 
+Number fields in the command panel and the Appearance panel work like the Inspector's: press on a number and drag right to raise it or left to lower it (hold Shift for fine steps, Ctrl for coarse ones). A click without a drag lets you type.
+
+## Extrude
+
+- **Both ways:** drag the distance arrow, or type a distance. A negative distance goes to the other side of the sketch, and the arrow drags past zero.
+- **The operation picks itself**, for Extrude and for a Press Pull on a profile. The **Operation** list shows what it does:
+  - **Join** when you pull out of the body the profile sits on (the default).
+  - **Cut** when you pull back into it (a negative distance).
+  - **New Body** when the profile touches no body.
+  - Pick any operation in the list by hand (New Body, Cut, Intersect, New Component, or Join itself) and it stays, whatever the distance does next.
+- **See what changes:** while it joins, the piece being added shows in green over the body; while it cuts, the piece being taken away shows in red.
+- **Faces work as profiles too:** pick a flat face of a body and pull it. It joins that body at the face, however far you pull. Faces that earlier Extrudes or cuts made pick too: a sketch region already used by a feature gives way to the face behind it, so a click into a cut pocket picks its floor or wall.
+- **Own faces can't be picked:** while an Extrude is open, its preview's faces don't highlight and can't be picked. A stray click on them leaves your selection as it was.
+
 ## Passthrough
 
 Passthrough shows the part where it stands in its 3D scene while you model it.
@@ -78,6 +92,12 @@ Passthrough is saved per project. It turns off by itself on the 3D tab, and come
 ## Appearances
 
 The Appearance library starts with 11 built-in finishes: plastics, paints, metals, rubber, glass and carbon. To add your own texture sets, put each one in its own folder under `res://materials/material_library/<Set Name>/`. Holo Forge recognises the usual map names: Color/BaseColor/albedo, Normal/NRM, Roughness, Metallic/Metalness, AO and Gloss. You can also drag any Godot `Material` onto a body.
+
+**Texture Map Controls** places a texture on a face with handles in the view. While it is open, the face you edit is outlined instead of tinted, so you see the texture clearly.
+- The **U** and **V** arrows stretch one direction.
+- The square dot between them scales both together.
+- The ring around the gizmo turns the texture.
+- The center point slides it.
 
 ## Files it writes
 

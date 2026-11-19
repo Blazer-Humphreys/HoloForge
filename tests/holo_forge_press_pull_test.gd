@@ -2,9 +2,9 @@ extends SceneTree
 ## Press Pull on a sketch profile, with real mouse and key events: in an empty design it makes a
 ## new body (it failed as "The join doesn't touch any solid body"), sized by dragging its distance
 ## arrow; on a box's top face it joins the box; beside a box it makes a body of its own. The
-## feature edits from the timeline as "Join or New Body", and one saved as Join before (with
-## nothing to join) opens as that and builds. The distance field's grey hint stays empty while the
-## field reads just its value.
+## feature edits from the timeline with its automatic operation shown as what it did (New Body),
+## and one saved as Join before (with nothing to join) opens as that and builds. The distance
+## field's grey hint stays empty while the field reads just its value.
 ##
 ## godot --headless --path . --script res://tests/holo_forge_press_pull_test.gd
 
@@ -39,7 +39,7 @@ func run() -> void:
 		await _check_empty_design()
 		await _check_on_and_beside_a_box()
 		await _check_old_join()
-	print("PASS holo_forge_press_pull: a profile Press Pull makes a new body in an empty design (dragged by its arrow), joins a box it sits on, makes its own body beside one, edits as Join or New Body, an old Join one opens as that and builds, and the distance hint stays quiet." \
+	print("PASS holo_forge_press_pull: a profile Press Pull makes a new body in an empty design (dragged by its arrow), joins a box it sits on, makes its own body beside one, edits showing New Body (its automatic operation), an old Join one opens as that and builds, and the distance hint stays quiet." \
 		if failures.is_empty() else "FAIL holo_forge_press_pull")
 	quit(0 if failures.is_empty() else 1)
 
@@ -54,7 +54,7 @@ func _check_empty_design() -> void:
 	_expect(ws.command != null and ws.command.feature != null and ws.command.feature.type == "extrude", "A click inside the rectangle should make the Press Pull an extrude (%s)." % [ws.command.feature.type if ws.command != null and ws.command.feature != null else "none"])
 	if ws.command == null:
 		return
-	_expect(str(ws.command.feature.options.get("operation", "")) == OPERATIONS.AUTO, "A profile Press Pull should be Join or New Body (%s)." % ws.command.feature.options.get("operation", ""))
+	_expect(str(ws.command.feature.options.get("operation", "")) == OPERATIONS.AUTO, "A profile Press Pull should take the automatic operation (%s)." % ws.command.feature.options.get("operation", ""))
 	await _frames(2)
 	var arrow: Dictionary = {}
 	for handle in ws.viewport.handles:
@@ -80,11 +80,11 @@ func _check_empty_design() -> void:
 		var volume: float = bodies[id].shape.volume()
 		_expect(absf(volume - 0.04 * 0.02 * dragged) <= 1e-9 * maxf(1.0, volume * 1e6), "The body should be 40 x 20 mm x the dragged %s (%.6f mm3)." % [text, volume * 1e9])
 		_expect(ws.doc.bodies.has(id), "The new body should be registered (named %s)." % ws.doc.body_name(id))
-	# From the timeline it edits as Extrude, showing Join or New Body.
+	# From the timeline it edits as Extrude: the automatic operation shows as what it did, New Body.
 	ws.edit_feature(feature.id)
 	await _frames(2)
 	var option := ws.panel._editors.get("operation") as OptionButton
-	_expect(option != null and option.get_item_text(option.selected) == "Join or New Body", "Editing it should show Join or New Body (%s)." % (option.get_item_text(option.selected) if option != null else "no field"))
+	_expect(option != null and option.get_item_text(option.selected) == "New Body" and str(feature.options.get("operation", "")) == OPERATIONS.AUTO, "Editing it should show New Body, still automatic (%s)." % (option.get_item_text(option.selected) if option != null else "no field"))
 	ws.accept_command()
 	await _frames(2)
 	_expect(str(ws.result.get("errors", {}).get(feature.id, "")) == "" and ws.result.bodies.size() == 1, "OK on the edit should keep the body (%s)." % ws.result.get("errors", {}))
@@ -124,7 +124,7 @@ func _check_on_and_beside_a_box() -> void:
 
 
 ## A profile Press Pull saved as Join before Auto, with nothing to join: the error says how to fix
-## it, and opening it from the timeline makes it Join or New Body, which builds.
+## it, and opening it from the timeline makes it the automatic operation, which builds.
 func _check_old_join() -> void:
 	await _new_part()
 	await _rectangle(SKETCH.ORIGIN_PLANES.xz, "xz", Vector3(-0.02, 0, 0.01), Vector3(0.02, 0, -0.01))
@@ -140,7 +140,7 @@ func _check_old_join() -> void:
 	_expect(error.contains("double-click"), "An old Join with nothing to join should say how to fix it ('%s')." % error)
 	ws.edit_feature(feature.id)
 	await _frames(2)
-	_expect(str(feature.options.get("operation", "")) == OPERATIONS.AUTO, "Opening it should switch it to Join or New Body (%s)." % feature.options.get("operation", ""))
+	_expect(str(feature.options.get("operation", "")) == OPERATIONS.AUTO, "Opening it should switch it to the automatic operation (%s)." % feature.options.get("operation", ""))
 	ws.accept_command()
 	await _frames(2)
 	_expect(ws.result.get("errors", {}).is_empty() and ws.result.bodies.size() == 1, "Then it should build its body (%s)." % ws.result.get("errors", {}))

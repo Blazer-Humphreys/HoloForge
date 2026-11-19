@@ -87,8 +87,40 @@ func refresh() -> void:
 		if feature.options.get("visible", true):
 			for region in state.get("regions", []):
 				_profile_entries.append({"sketch": feature.id, "region": region, "key": _profile_key(feature.id, region),
-					"mesh": TESSELLATE.surface_mesh(TESSELLATE.tessellate(region.face))})
+					"mesh": TESSELLATE.surface_mesh(TESSELLATE.tessellate(region.face)), "used_by": []})
+	_note_used_profiles(doc)
 	update_display()
+
+
+## Marks each profile entry with the features that use it (an Extrude's or Cut's profile): its
+## "used_by" ids. Such a profile stays where it was drawn, often in the air over the pocket its
+## cut made, or inside what its join added, so _profile_at() lets it give way to the faces behind.
+func _note_used_profiles(doc: Resource) -> void:
+	if _profile_entries.is_empty():
+		return
+	for feature in doc.features.slice(0, doc.active_count()):
+		if feature.type == "sketch" or feature.suppressed:
+			continue
+		for value in feature.options.values():
+			if not value is Array:
+				continue
+			for pick in value:
+				if not pick is Dictionary or str(pick.get("kind", "")) != "profile" or not pick.get("point") is Vector2:
+					continue
+				for entry in _profile_entries:
+					if entry.sketch == str(pick.get("sketch", "")) and _region_has(entry.region, pick.point) and not (entry.used_by as Array).has(feature.id):
+						(entry.used_by as Array).append(feature.id)
+
+
+## Whether a point of the sketch plane lies inside a region (in its outer loop, out of its holes).
+static func _region_has(region: Dictionary, p: Vector2) -> bool:
+	var loops: Array = region.get("loops", [])
+	if loops.is_empty() or not Geometry2D.is_point_in_polygon(p, loops[0]):
+		return false
+	for k in range(1, loops.size()):
+		if Geometry2D.is_point_in_polygon(p, loops[k]):
+			return false
+	return true
 
 
 ## Shows profile shading while profiles can be picked, and the origin planes while planes can.
@@ -171,6 +203,10 @@ func pick(screen: Vector2) -> Dictionary:
 	var face_hit: Dictionary = viewport.face_hit_at(screen)
 	var face_distance := INF
 	if not face_hit.is_empty():
+		if _is_own_face(face_hit):
+			# The open command's own faces (an Extrude's caps and sides being pulled) can't be picked
+			# and don't let a click through to what is behind them.
+			return {}
 		face_distance = (ray[0] as Vector3).distance_to(face_hit.point)
 	if kinds.has("profile"):
 		var profile := _profile_at(ray, face_distance)
@@ -337,6 +373,9 @@ func _profile_at(ray: Array, face_distance: float) -> Dictionary:
 	var best := {}
 	var best_t := face_distance + 1e-6
 	var best_area := INF
+	var own := _own_tag().trim_suffix(":")
+	# How far in front of the face hit a profile counts as lying on it.
+	var on_face := 1e-6 + 1e-6 * face_distance if is_finite(face_distance) else 0.0
 	for entry in _profile_entries:
 		var plane: Transform3D = _sketches[entry.sketch].state.plane
 		var normal := plane.basis.z
@@ -345,6 +384,10 @@ func _profile_at(ray: Array, face_distance: float) -> Dictionary:
 			continue
 		var t: float = (plane.origin - (ray[0] as Vector3)).dot(normal) / denom
 		if t < 0.0 or t > best_t + 1e-9:
+			continue
+		if is_finite(face_distance) and t < face_distance - on_face and (entry.used_by as Array).any(func(id: Variant) -> bool: return str(id) != own):
+			# A profile another feature already used, in front of a body face (over the pocket its
+			# cut made): the face behind it is what the click is after. On the face it still wins.
 			continue
 		var hit: Vector3 = (ray[0] as Vector3) + (ray[1] as Vector3) * t
 		var local := plane.affine_inverse() * hit
@@ -387,7 +430,7 @@ func _body_pick(screen: Vector2, kinds: Array) -> Dictionary:
 	if hit.kind == "face" and not kinds.has("face") and kinds.has("body") or kinds.has("component") and not kinds.has("face"):
 		hit = {"kind": "body", "body": hit.body, "index": -1, "point": hit.get("point", Vector3.ZERO)}
 	var ref := REFERENCES.from_pick(hit, result)
-	if ref.is_empty():
+	if ref.is_empty() or _is_own_ref(ref):
 		return {}
 	var shape: RefCounted = result.bodies[hit.body].shape
 	match str(ref.kind):
@@ -420,6 +463,43 @@ func _body_pick(screen: Vector2, kinds: Array) -> Dictionary:
 				return {"kind": "component", "component": component, "key": "comp:" + component}
 	ref["key"] = "%s:%s:%s" % [ref.kind, ref.get("body", ""), ref.get("name", hit.get("index", -1))]
 	return ref
+
+
+## The tag that starts the names of the faces the open command's feature makes ("<id>:"), or "".
+func _own_tag() -> String:
+	var command: Variant = workspace.get("command")
+	if command == null or not (command is Object) or command.get("feature") == null:
+		return ""
+	return str(command.feature.id) + ":"
+
+
+## Whether a face_hit_at() hit is on a face the open command's feature makes.
+func _is_own_face(face_hit: Dictionary) -> bool:
+	var tag := _own_tag()
+	if tag == ":" or tag == "" or bool(face_hit.get("mesh", false)):
+		return false
+	var body: Dictionary = workspace.result.get("bodies", {}).get(face_hit.get("body", ""), {})
+	if body.get("shape") == null:
+		return false
+	var names: PackedStringArray = body.shape.get_face_names()
+	var index := int(face_hit.get("face", -1))
+	return index >= 0 and index < names.size() and names[index].begins_with(tag)
+
+
+## Whether a face or edge reference is on the open command's own feature (an edge counts when
+## either face beside it does).
+func _is_own_ref(ref: Dictionary) -> bool:
+	var tag := _own_tag()
+	if tag == ":" or tag == "":
+		return false
+	match str(ref.get("kind", "")):
+		"face":
+			return str(ref.get("name", "")).begins_with(tag)
+		"edge":
+			for face_name in str(ref.get("name", "")).split("|"):
+				if face_name.begins_with(tag):
+					return true
+	return false
 
 
 ## Origin plane squares and construction planes under the cursor (nearest first).

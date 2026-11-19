@@ -132,6 +132,17 @@ var _prepared := {}
 var _pickable: Array = []
 var _selected: Array = []
 var _hover := {}
+## When true, picked and hovered faces and bodies are outlined instead of tinted, so what the face
+## shows stays in clear view (Texture Map Controls sets it while it is open).
+var outline_faces := false
+## () -> bool, optional: asked on every highlight refresh for outline_faces (the workspace: whether
+## its open command wants outlines).
+var outline_provider: Callable
+## The outlines drawn now: [{"body", "look": "selected" or "hover", "lines": segment pairs in the
+## body's modelled space}].
+var _outlines: Array = []
+## (body id -> {"tess", "faces" key -> lines}) so a hover that comes and goes finds them again.
+var _outline_cache := {}
 var _drag := {}
 var _materials := {}
 ## section_highlight.gdshader drawn from behind (a sectioned surface's back), made when first needed.
@@ -1720,15 +1731,16 @@ func set_handles(value: Array[Dictionary]) -> void:
 	_overlay.queue_redraw()
 
 
-## The handle a press at screen_position takes. Point and angle dots come first (the nearest
-## within 10 px): a dot is a small target and often sits on an arrow's shaft (Texture Map's anchor
-## at the start of its Scale arrows, Section's turn dots, Place Component's turn dots), which is
-## still taken along the rest of its 70 px. Then arrows, rings and slides in list order.
+## The handle a press at screen_position takes. Point, angle and scale dots come first (the
+## nearest within 10 px): a dot is a small target and often sits on an arrow's shaft (Texture
+## Map's anchor at the start of its Scale arrows, Section's turn dots, Place Component's turn
+## dots), which is still taken along the rest of its 70 px. Then arrows, rings and slides in list
+## order.
 func _handle_at(screen_position: Vector2) -> Dictionary:
 	var dot := {}
 	var dot_distance := 10.0
 	for handle in handles:
-		if str(handle.type) != "point" and str(handle.type) != "angle":
+		if not str(handle.type) in ["point", "angle", "scale"]:
 			continue
 		var shape := _handle_screen_shape(handle)
 		if shape.is_empty():
@@ -1777,11 +1789,16 @@ func _handle_screen_shape(handle: Dictionary) -> Dictionary:
 			var start: Vector3 = (handle.start as Vector3).normalized() * float(handle.get("radius", 0.05))
 			var at := project(origin + start)
 			return {"at": at, "center": project(origin)} if at.is_finite() else {}
-		"ring":
-			# A DOF ring: RING_PX on screen whatever the zoom; its outline as screen points (the
-			# parts behind the camera left out).
+		"scale":
+			# A dot "radius" (meters) out from its origin along "direction".
 			var origin: Vector3 = handle.origin
-			var radius := _world_per_pixel() * _depth_scale(origin) * RING_PX
+			var at := project(origin + (handle.direction as Vector3).normalized() * float(handle.get("radius", 0.05)))
+			return {"at": at, "center": project(origin)} if at.is_finite() else {}
+		"ring":
+			# A ring "radius_px" (RING_PX for a DOF ring) on screen whatever the zoom; its outline as
+			# screen points (the parts behind the camera left out).
+			var origin: Vector3 = handle.origin
+			var radius := _world_per_pixel() * _depth_scale(origin) * float(handle.get("radius_px", RING_PX))
 			var outline := PackedVector2Array()
 			for point in MANIPULATOR.ring_points(origin, handle.axis, radius, 48):
 				var at := project(point)
@@ -1810,7 +1827,7 @@ func _depth_scale(point: Vector3) -> float:
 
 func _handle_param(handle: Dictionary, from: Vector3, dir: Vector3) -> Variant:
 	match str(handle.type):
-		"arrow", "slide":
+		"arrow", "slide", "scale":
 			return MANIPULATOR.closest_on_line(handle.origin, handle.direction, from, dir)
 		"angle":
 			return MANIPULATOR.angle_on_plane(handle.origin, handle.axis, handle.start, from, dir)
@@ -1827,6 +1844,14 @@ func _drag_handle(screen_position: Vector2) -> void:
 				return
 			var value := maxf(float(handle.base) + (t - float(_drag.start_t)) * float(handle.get("factor", 1.0)), float(handle.get("min", 0.00001)))
 			manipulator_changed.emit(handle, value)
+		"scale":
+			# The ratio of the dot's distance from its origin now to at the press (each of "keys"
+			# becomes its base times it).
+			var t := MANIPULATOR.closest_on_line(handle.origin, handle.direction, ray[0], ray[1])
+			var start := float(_drag.start_t)
+			if is_nan(t) or is_nan(start) or absf(start) < 1e-12:
+				return
+			manipulator_changed.emit(handle, maxf(t / start, float(handle.get("min_ratio", 0.01))))
 		"point":
 			var hit = MANIPULATOR.on_plane(handle.position, handle.normal, ray[0], ray[1])
 			if hit != null:
@@ -1911,6 +1936,7 @@ func _draw_overlay() -> void:
 		draw_handler.call(_overlay)
 	var accent: Color = theme_colors.select_line
 	var handle_color: Color = theme_colors.handle
+	_draw_outlines()
 	# Selected and hovered edges and vertices are drawn on top, thick enough to see.
 	for pick in _selected:
 		_draw_pick_2d(pick, accent, 3.0)
@@ -1934,6 +1960,10 @@ func _draw_overlay() -> void:
 			"angle":
 				_overlay.draw_line(shape.center, shape.at, handle_color, 1.5, true)
 				_overlay.draw_circle(shape.at, 6.0, handle_color)
+			"scale":
+				# A square dot on a thin line from the center: it moves along the line.
+				_overlay.draw_line(shape.center, shape.at, handle_color, 1.5, true)
+				_overlay.draw_rect(Rect2(shape.at - Vector2(6, 6), Vector2(12, 12)), handle_color, true)
 			"ring":
 				_overlay.draw_polyline(shape.points, handle_color, 2.5, true)
 			"slide":
@@ -2036,6 +2066,9 @@ func _draw_pick_2d(pick: Dictionary, color: Color, width: float) -> void:
 func _refresh_highlights() -> void:
 	for child in _highlight_root.get_children():
 		child.queue_free()
+	_outlines.clear()
+	if outline_provider.is_valid():
+		outline_faces = bool(outline_provider.call())
 	var selected_faces := {}
 	var selected_bodies := {}
 	# Mesh bodies: selected face groups and triangles, gathered per body.
@@ -2131,6 +2164,9 @@ func _add_highlight(body_id: String, faces: PackedInt32Array, look: String) -> v
 	var prepared: Dictionary = _prepared.get(body_id, {})
 	if prepared.is_empty():
 		return
+	if outline_faces:
+		_outlines.append({"body": body_id, "look": look, "lines": _outline_lines(body_id, prepared.tess, faces)})
+		return
 	var two_sided := bool((_body_nodes.get(body_id, {}) as Dictionary).get("two_sided", false))
 	var material: Material = _materials[look + "_two_sided" if two_sided else look]
 	var clip: Dictionary = prepared.get("clip", {})
@@ -2150,6 +2186,75 @@ func _add_highlight(body_id: String, faces: PackedInt32Array, look: String) -> v
 		_place_clip(mesh_instance)
 		_sync_if_moved(mesh_instance)
 	_highlight_root.add_child(mesh_instance)
+
+
+## The outline of some of a body's faces as segment pairs: the border of their triangles (seams
+## inside a face drop out), or a whole body's edges when faces is empty.
+func _outline_lines(body_id: String, tess: Dictionary, faces: PackedInt32Array) -> PackedVector3Array:
+	var cached: Dictionary = _outline_cache.get(body_id, {})
+	if not is_same(cached.get("tess"), tess):
+		cached = {"tess": tess, "lines": {}}
+		_outline_cache[body_id] = cached
+	var key := str(faces)
+	if cached.lines.has(key):
+		return cached.lines[key]
+	var out := PackedVector3Array()
+	if faces.is_empty():
+		out = tess.get("edge_points", PackedVector3Array())
+	else:
+		var wanted := {}
+		for f in faces:
+			wanted[f] = true
+		var positions: PackedVector3Array = tess.get("positions", PackedVector3Array())
+		var indices: PackedInt32Array = tess.get("indices", PackedInt32Array())
+		var face_ids: PackedInt32Array = tess.get("face_ids", PackedInt32Array())
+		# Each side by its rounded corners: a side two triangles share is inside the outline.
+		var sides := {}
+		for t in face_ids.size():
+			if not wanted.has(face_ids[t]):
+				continue
+			for k in 3:
+				var a := positions[indices[t * 3 + k]]
+				var b := positions[indices[t * 3 + (k + 1) % 3]]
+				var ka := Vector3i((a * 1e7).round())
+				var kb := Vector3i((b * 1e7).round())
+				if ka == kb:
+					continue
+				var side := [ka, kb] if ka < kb else [kb, ka]
+				if sides.has(side):
+					sides[side] = null
+				else:
+					sides[side] = [a, b]
+		for side in sides:
+			if sides[side] != null:
+				out.append(sides[side][0])
+				out.append(sides[side][1])
+	cached.lines[key] = out
+	return out
+
+
+## The outlines shown now, [{"body", "look", "segments"}] (for tests).
+func face_outlines() -> Array:
+	var shown := []
+	for entry in _outlines:
+		shown.append({"body": entry.body, "look": entry.look, "segments": int((entry.lines as PackedVector3Array).size() / 2.0)})
+	return shown
+
+
+func _draw_outlines() -> void:
+	for entry in _outlines:
+		var color: Color = theme_colors.select_line if entry.look == "selected" else theme_colors.hover_line
+		var pose := _shown_pose(str(entry.body))
+		var lines: PackedVector3Array = entry.lines
+		var screen := PackedVector2Array()
+		for s in range(0, lines.size() - 1, 2):
+			var a := project(pose * lines[s])
+			var b := project(pose * lines[s + 1])
+			if a.is_finite() and b.is_finite():
+				screen.append(a)
+				screen.append(b)
+		if screen.size() >= 2:
+			_overlay.draw_multiline(screen, color, 2.5, true)
 
 
 ## A clipped highlight's plane (its "clip" meta, in its body's modelled space) where the body shows.

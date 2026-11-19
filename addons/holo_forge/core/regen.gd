@@ -105,6 +105,9 @@ static func rebuild(doc: Resource, kernel: RefCounted, options := {}) -> Diction
 	var result := {
 		"bodies": {}, "errors": {}, "warnings": {}, "values": PARAMETERS.evaluate(doc), "sketches": {},
 		"construction": {}, "threads": {}, "forms": {}, "made_by": {},
+		# Where each Extrude starts: {feature id: {"origin", "normal"}} (the profile's plane, its
+		# normal before Flip). Its arrow stands there even when a Join swallowed the pulled face.
+		"profile_frames": {},
 	}
 	var form_preview := str(options.get("form_preview", ""))
 	var mesh_preview := str(options.get("mesh_preview_feature", ""))
@@ -153,7 +156,7 @@ static func rebuild(doc: Resource, kernel: RefCounted, options := {}) -> Diction
 		var ctx := {
 			"kernel": kernel, "doc": doc, "values": result.values, "bodies": result.bodies, "sketches": result.sketches,
 			"construction": result.construction, "tools": tools, "warnings": result.warnings, "threads": result.threads,
-			"forms": result.forms, "form_preview": form_preview,
+			"forms": result.forms, "form_preview": form_preview, "profile_frames": result.profile_frames,
 			"mesh_time_limit": maxf(lead, 0.05) if lead > 0.0 else feature_time_limit(feature, options),
 		}
 		var error := stored_mesh_problem(feature)
@@ -186,6 +189,15 @@ static func rebuild(doc: Resource, kernel: RefCounted, options := {}) -> Diction
 				result.warnings[feature.id] = note if before == "" else before + "; " + note
 		if last:
 			break
+	# What each Create feature did (an automatic one's Join, Cut or New Body), for its panel, and
+	# the tool shape of each Join or Cut, which its open command draws as what it adds or takes away.
+	result["operations"] = {}
+	result["tool_shapes"] = {}
+	for id in tools:
+		var op := str(tools[id].get("operation", ""))
+		result.operations[id] = op
+		if op == "join" or op == "cut":
+			result.tool_shapes[id] = tools[id].get("shape")
 	return result
 
 

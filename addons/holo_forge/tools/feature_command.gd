@@ -193,7 +193,7 @@ func read_values() -> Dictionary:
 		values.distance = feature.expression(input_key) if feature.inputs.has(input_key) else values.distance
 		values.pick = (feature.options.get("press_pull_pick", []) as Array).duplicate(true)
 		# A profile Press Pull saved as Join (before Auto) is written again when it opens, as Auto.
-		reads_otherwise = feature.type == "extrude" and str(feature.options.get("operation", "")) == OPERATIONS.JOIN
+		reads_otherwise = feature.type == "extrude" and str(feature.options.get("operation", "")) == OPERATIONS.JOIN and not feature.options.get("operation_by_hand", false)
 		return values
 	for field in fields():
 		var k: String = field.key
@@ -223,7 +223,7 @@ func read_values() -> Dictionary:
 		elif field.has("unset"):
 			# Saved before the field existed: what the feature builds with, so an edit keeps it.
 			values[k] = field.unset
-	if feature.options.has("press_pull_pick") and str(values.get("operation", "")) == OPERATIONS.JOIN and spec.get("ops", []).has(OPERATIONS.AUTO):
+	if feature.options.has("press_pull_pick") and str(values.get("operation", "")) == OPERATIONS.JOIN and spec.get("ops", []).has(OPERATIONS.AUTO) and not feature.options.get("operation_by_hand", false):
 		# A profile Press Pull saved as Join (before Auto): it opens, and is written back, as Auto.
 		values["operation"] = OPERATIONS.AUTO
 		reads_otherwise = true
@@ -276,8 +276,13 @@ func manipulators(values: Dictionary, evaluated: Dictionary) -> Array[Dictionary
 		return handles
 	var handle := {"type": "arrow", "key": arrow, "origin": (frame.origin as Vector3) + (frame.direction as Vector3) * amount,
 		"direction": frame.direction, "factor": 1.0, "base": amount}
-	if bool(spec.get("arrow_signed", false)):
-		# An offset goes both ways (Plane Cut): the arrow may be dragged below zero.
+	var signed := bool(spec.get("arrow_signed", false))
+	if _pressing():
+		# Press Pull: a profile or a face goes both ways (in past zero it cuts or pushes the face
+		# in); an edge's fillet radius stays above zero.
+		signed = _press_pull_type(values) != "fillet"
+	if signed:
+		# An offset goes both ways (Plane Cut, Extrude): the arrow may be dragged below zero.
 		handle["min"] = -1e9
 	handles.append(handle)
 	return handles
@@ -1365,6 +1370,13 @@ func _write_options(values: Dictionary) -> void:
 	if str(spec.get("op", "")) != "" and not _shown({"visible_if": spec.get("op_visible_if", {})}, values):
 		feature.options.erase("operation")
 		feature.options.erase("targets")
+	elif (spec.get("ops", []) as Array).has(OPERATIONS.AUTO) and feature.options.has("operation"):
+		# A choice picked by hand stays as it is (read_values won't turn a hand-picked Join of a
+		# Press Pull back into the automatic operation, as it does an old saved one).
+		if str(feature.options.operation) == OPERATIONS.AUTO:
+			feature.options.erase("operation_by_hand")
+		else:
+			feature.options["operation_by_hand"] = true
 
 
 func _shown(field: Dictionary, values: Dictionary) -> bool:
@@ -1419,10 +1431,15 @@ func _arrow_frame(values: Dictionary, amount := 0.0) -> Dictionary:
 		"sketch_curve", "edge":
 			return _from_body((_curves_normal(refs) if along.is_zero_approx() else along) * flip, amount, values)
 		"face":
+			# Where the extrude started, as the rebuild recorded it from the model before it: the
+			# pulled face itself is gone from the rebuilt model once a Join swallows it or a Cut
+			# takes it away.
+			var started: Dictionary = result.get("profile_frames", {}).get(str(feature.id) if feature != null else "", {})
+			if not started.is_empty():
+				var start_normal: Vector3 = started.normal if along.is_zero_approx() else along
+				return {"origin": started.origin, "direction": start_normal * flip}
 			var body: Dictionary = result.get("bodies", {}).get(ref.get("body", ""), {})
-			if body.is_empty():
-				return {}
-			var index: int = body.shape.find_face(str(ref.get("name", "")))
+			var index: int = body.shape.find_face(str(ref.get("name", ""))) if not body.is_empty() else -1
 			var info: Dictionary = body.shape.face_info(index) if index >= 0 else {}
 			if not info.get("planar", false):
 				return {}
@@ -1537,7 +1554,7 @@ func _press_pull_write(doc: Resource, values: Dictionary) -> void:
 	match type:
 		"extrude", "surface":
 			feature.options["profiles"] = picks
-			if type == "extrude" and str(feature.options.get("operation", "")) == OPERATIONS.JOIN:
+			if type == "extrude" and str(feature.options.get("operation", "")) == OPERATIONS.JOIN and not feature.options.get("operation_by_hand", false):
 				feature.options["operation"] = OPERATIONS.AUTO
 				sync_body(doc, feature)
 		"fillet":

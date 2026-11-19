@@ -5,9 +5,10 @@ extends RefCounted
 ##
 ## Join/Cut/Intersect act on the feature's picked bodies ("targets"); with none picked, every
 ## solid body the result touches takes part, as in other CAD apps (surface bodies only when
-## picked). Auto (Press Pull on a profile) joins when the result touches a solid body and makes a
-## new body when it doesn't. Each feature's tool shape is kept in ctx.tools so feature patterns
-## and mirrors can replay it.
+## picked). Auto (Extrude's default, and a Press Pull on a profile) makes a new body when the result
+## touches no solid body; when it does, it joins, or cuts when the feature was pulled back past zero
+## (core/features/sketch_solid.gd extrude sets ctx.auto_cut to its id). Each feature's tool
+## shape is kept in ctx.tools so feature patterns and mirrors can replay it.
 ##
 ## Mesh bodies (core/mesh/mesh_body.gd) never take part by themselves, and one picked as a target
 ## is refused with the gate sentence: Join, Cut and Intersect need B-rep bodies.
@@ -21,7 +22,7 @@ const INTERSECT := "intersect"
 const NEW_COMPONENT := "new_component"
 const AUTO := "auto"
 const ALL := [NEW_BODY, JOIN, CUT, INTERSECT, NEW_COMPONENT]
-const LABELS := {NEW_BODY: "New Body", JOIN: "Join", CUT: "Cut", INTERSECT: "Intersect", NEW_COMPONENT: "New Component", AUTO: "Join or New Body"}
+const LABELS := {NEW_BODY: "New Body", JOIN: "Join", CUT: "Cut", INTERSECT: "Intersect", NEW_COMPONENT: "New Component", AUTO: "Join, Cut or New Body"}
 const KERNEL_OPS := {JOIN: 0, CUT: 1, INTERSECT: 2}
 
 
@@ -38,7 +39,11 @@ static func reserves_body(op: String) -> bool:
 static func apply(ctx: Dictionary, feature: Resource, tool_shape: RefCounted) -> String:
 	var op := str(feature.options.get("operation", NEW_BODY))
 	if op == AUTO:
-		op = JOIN if not participating(ctx, tool_shape, feature.options.get("targets", []), true).is_empty() else NEW_BODY
+		if participating(ctx, tool_shape, feature.options.get("targets", []), true).is_empty():
+			op = NEW_BODY
+		else:
+			op = CUT if str(ctx.get("auto_cut", "")) == str(feature.id) else JOIN
+	ctx.erase("auto_cut")
 	if ctx.has("tools"):
 		ctx.tools[feature.id] = {"shape": tool_shape, "operation": op}
 	return apply_shape(ctx, feature, tool_shape, op, feature.options.get("targets", []), str(feature.options.get("body_id", "")))
@@ -102,12 +107,16 @@ static func participating(ctx: Dictionary, tool_shape: RefCounted, picked: Array
 				return []
 			result.append(target)
 		return result
-	var reach: AABB = (tool_shape.bbox() as AABB).grow(1e-7)
+	var reach: AABB = tool_shape.bbox()
 	for body_id in bodies:
 		if MESH_BODY.is_mesh(bodies[body_id]):
 			continue
 		if solids_only and bodies[body_id].shape.is_surface():
 			continue
-		if (bodies[body_id].shape.bbox() as AABB).intersects(reach):
+		var box: AABB = bodies[body_id].shape.bbox()
+		# Boxes that only meet (a face pulled out of a body) must still count, and AABB is float32:
+		# position + size of a 20 m box is off by a few micrometres, so the margin grows with size.
+		var margin := 1e-7 + 1e-6 * maxf(reach.get_longest_axis_size(), box.get_longest_axis_size())
+		if box.intersects(reach.grow(margin)):
 			result.append(body_id)
 	return result

@@ -377,7 +377,7 @@ func grab_point(h: Dictionary) -> Vector2:
 		"slide":
 			for f in [0.85, 0.15, 0.7, 0.3, 0.95, 0.05]:
 				candidates.append((shape.from as Vector2).lerp(shape.to, f))
-		"point", "angle":
+		"point", "angle", "scale":
 			candidates.append(shape.at)
 		"ring":
 			var outline: PackedVector2Array = shape.points
@@ -398,7 +398,8 @@ func held() -> Dictionary:
 
 
 ## The screen direction a handle moves along at its press point: an arrow or slide along its axis,
-## an angle dot round its centre (counter-clockwise on screen), a point to the right.
+## an angle dot round its centre (counter-clockwise on screen), a scale dot away from its centre,
+## a point to the right.
 func screen_along(h: Dictionary) -> Vector2:
 	var shape: Dictionary = ws.viewport._handle_screen_shape(h)
 	match str(h.type):
@@ -407,6 +408,9 @@ func screen_along(h: Dictionary) -> Vector2:
 		"angle":
 			var r := (shape.at as Vector2) - (shape.center as Vector2)
 			return Vector2(r.y, -r.x).normalized() if r.length() > 1e-6 else Vector2.RIGHT
+		"scale":
+			var r := (shape.at as Vector2) - (shape.center as Vector2)
+			return r.normalized() if r.length() > 1e-6 else Vector2.RIGHT
 	return Vector2.RIGHT
 
 
@@ -462,6 +466,12 @@ func _expected(h: Dictionary, drag: Dictionary, at: Vector2, points: PackedVecto
 		"slide":
 			var t := MANIPULATOR.closest_on_line(h.origin, h.direction, ray[0], ray[1])
 			return float(h.get("base", 0.0)) + t - float(drag.start_t)
+		"scale":
+			# The ratio each of its "bases" is multiplied by.
+			var t := MANIPULATOR.closest_on_line(h.origin, h.direction, ray[0], ray[1])
+			if is_nan(t) or absf(float(drag.start_t)) < 1e-12:
+				return 1.0
+			return maxf(t / float(drag.start_t), float(h.get("min_ratio", 0.01)))
 		"angle":
 			var angle := MANIPULATOR.angle_on_plane(h.origin, h.axis, h.start, ray[0], ray[1])
 			return float(h.get("base", 0.0)) + angle

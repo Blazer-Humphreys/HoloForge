@@ -413,11 +413,26 @@ func run(plugin: EditorPlugin) -> void:
 	var mapping: Dictionary = doc.appearances[face_target].get("mapping", {})
 	check((mapping.get("scale", Vector2.ZERO) as Vector2).is_equal_approx(Vector2(0.12, 0.1)), "Dragging Scale U 20 mm should make the repeat 120 mm (%s)." % [mapping])
 	check(_uv_span(ws.viewport.body_surface(body_a).mesh, 1).is_equal_approx(Vector2(0.02 / 0.12, 0.2)), "The view should show the longer repeat at once (%s)." % _uv_span(ws.viewport.body_surface(body_a).mesh, 1))
-	var turn := _handle(ws, "angle", "rotation")
+	var turn := _handle(ws, "ring", "rotation")
 	if not turn.is_empty():
 		ws._on_manipulator_changed(turn, float(turn.base) + 0.3)
 	mapping = doc.appearances[face_target].get("mapping", {})
-	check(absf(float(mapping.get("rotation", 0.0)) - 0.3) < 1e-5, "Dragging the turn dot 0.3 rad should turn the texture as much (%s)." % [mapping])
+	check(absf(float(mapping.get("rotation", 0.0)) - 0.3) < 1e-5, "Turning the Rotation ring 0.3 rad should turn the texture as much (%s)." % [mapping])
+	# The uniform Scale dot: twice as far out makes both repeats twice as long.
+	var dot := _handle(ws, "scale", "scale_uv")
+	check(not dot.is_empty(), "It should show the uniform Scale dot (%s)." % [handle_keys])
+	if not dot.is_empty():
+		ws._on_manipulator_changed(dot, 2.0)
+		mapping = doc.appearances[face_target].get("mapping", {})
+		check((mapping.get("scale", Vector2.ZERO) as Vector2).is_equal_approx(Vector2(0.24, 0.2)), "The Scale dot at twice its distance should double U and V (%s)." % [mapping])
+		check(str(ws.command_values.get("scale_u", "")) == "240 mm" and str(ws.command_values.get("scale_v", "")) == "200 mm", "The panel should show both doubled (%s)." % [ws.command_values])
+		ws._on_manipulator_changed(dot, 0.5)
+		mapping = doc.appearances[face_target].get("mapping", {})
+		check((mapping.get("scale", Vector2.ZERO) as Vector2).is_equal_approx(Vector2(0.06, 0.05)), "Half way in should halve them from where the drag began (%s)." % [mapping])
+		var restore: Dictionary = ws.command_values.duplicate(true)
+		restore["scale_u"] = "120"
+		restore["scale_v"] = "100"
+		ws.set_command_values(restore)
 	var anchor := _handle(ws, "point", "anchor")
 	if not anchor.is_empty():
 		ws._on_manipulator_changed(anchor, (anchor.position as Vector3) + (ws.command._frame().u as Vector3) * 0.5)
@@ -441,7 +456,7 @@ func run(plugin: EditorPlugin) -> void:
 	arrow = _handle(ws, "arrow", "scale_v")
 	if not arrow.is_empty():
 		ws._on_manipulator_changed(arrow, float(arrow.base) + 0.02 * float(arrow.factor))
-	turn = _handle(ws, "angle", "rotation")
+	turn = _handle(ws, "ring", "rotation")
 	if not turn.is_empty():
 		ws._on_manipulator_changed(turn, float(turn.base) + 0.3)
 	var view_uvs := _uvs(ws.viewport.body_surface(body_a).mesh, 1)

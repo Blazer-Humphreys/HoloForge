@@ -8,10 +8,15 @@ extends PanelContainer
 ## a slider row under it. Moving the slider writes its value into the field as text in the
 ## document's units (as if typed, values_changed); typing moves the slider. slider_drag tells
 ## when a drag starts and ends, so a command can treat a drag like a handle drag.
+##
+## Expression and point fields also drag like the Inspector's numbers (ui/number_drag.gd): press
+## and drag right to raise the value, left to lower it, as if typed; slider_drag tells of these
+## drags too.
 
 const UNITS := preload("res://addons/holo_forge/core/units.gd")
 const POINT64 := preload("res://addons/holo_forge/core/point64.gd")
 const DIMENSION_LAYOUT := preload("res://addons/holo_forge/core/sketch/dimension_layout.gd")
+const NUMBER_DRAG := preload("res://addons/holo_forge/ui/number_drag.gd")
 ## A note hint's colour (amber: it tells of something the user may not want).
 const NOTE_COLOR := Color(1.0, 0.78, 0.4, 0.9)
 ## The item id of a choice field's choice for a value it doesn't offer (see _select_value).
@@ -61,6 +66,9 @@ var _slider_spans := {}
 ## The key of the slider being dragged ("" for none).
 var dragged_slider := ""
 var _ok: Button
+## What a choice field with "auto" shows while its value is that auto value (key -> the choice
+## the auto value stands for now; see show_auto).
+var _auto_shown := {}
 
 
 func _init() -> void:
@@ -124,6 +132,7 @@ func setup(title: String, fields: Array[Dictionary], p_values: Dictionary, p_uni
 	_row_nodes.clear()
 	_hints.clear()
 	_editors.clear()
+	_auto_shown.clear()
 	_sliders.clear()
 	_slider_rows.clear()
 	_slider_spans.clear()
@@ -167,10 +176,18 @@ func set_values(p_values: Dictionary, changed_elsewhere: Array = []) -> void:
 			"selection":
 				_update_selection_button(key)
 			"enum":
-				values[key] = _select_value(editor, values.get(key), field.get("default"))
+				_show_choice(editor, field)
 			"bool":
 				(editor as CheckBox).set_pressed_no_signal(bool(values.get(key, false)))
 	_update_visibility()
+
+
+## Lets a number field drag (ui/number_drag.gd): each step goes in as if typed (text_changed), and
+## slider_drag tells when the drag starts and ends.
+func _drag_number(edit: LineEdit, key: String, kind: String, options: Dictionary) -> void:
+	var helper: RefCounted = NUMBER_DRAG.attach(edit, kind, func() -> String: return document_units,
+		func(text: String) -> void: edit.text_changed.emit(text), options)
+	helper.dragging_changed = func(active: bool) -> void: slider_drag.emit(key, active)
 
 
 ## Puts text in a field; one that has the keyboard keeps its caret at the end of the new text.
@@ -386,6 +403,7 @@ func _add_row(field: Dictionary) -> void:
 				values_changed.emit(values))
 			edit.text_submitted.connect(func(_text: String) -> void: accepted.emit())
 			edit.gui_input.connect(_escape_input)
+			_drag_number(edit, key, str(field.get("kind", UNITS.KIND_NUMBER)), {"whole": field.get("whole", false), "range": field.get("range")})
 			row.add_child(edit)
 			_editors[key] = edit
 			var hint := Label.new()
@@ -412,8 +430,18 @@ func _add_row(field: Dictionary) -> void:
 			for i in (field.options as Array).size():
 				option.add_item(field.options[i][1])
 				option.set_item_metadata(i, field.options[i][0])
-			values[key] = _select_value(option, values.get(key), field.get("default"))
+			_show_choice(option, field)
+			if field.has("auto"):
+				# A choice picked by hand, even the one the auto value shows, replaces the auto value
+				# (item_selected doesn't come for the item already showing).
+				option.get_popup().index_pressed.connect(func(index: int) -> void:
+					if values.get(key) == field.auto and index >= 0 and index < option.item_count:
+						values[key] = option.get_item_metadata(index)
+						_update_visibility()
+						values_changed.emit(values))
 			option.item_selected.connect(func(index: int) -> void:
+				if field.has("auto") and values.get(key) == option.get_item_metadata(index):
+					return
 				values[key] = option.get_item_metadata(index)
 				# An offered choice made: the choice of a value not offered goes.
 				var extra := option.get_item_index(UNOFFERED)
@@ -439,6 +467,7 @@ func _add_row(field: Dictionary) -> void:
 						POINT64.set_axis(values, key, axis, float(r.value))
 						values_changed.emit(values))
 				edit.gui_input.connect(_escape_input)
+				_drag_number(edit, key, UNITS.KIND_LENGTH, {"bare": true})
 				row.add_child(edit)
 				lines.append(edit)
 			_editors[key] = lines
@@ -611,6 +640,38 @@ func _from_display(shown: float, kind: String) -> float:
 ## no value shows the field's default (or its first choice). There is one such choice at most,
 ## after the offered ones (id UNOFFERED), and none while the value is an offered one. Returns the
 ## value shown.
+## Shows a choice field's value. A field with "auto" (tools/command.gd operation_fields) whose
+## value is that auto value keeps it, and shows the choice it stands for now (show_auto, or the
+## field's "auto_shows" before the first build).
+func _show_choice(option: OptionButton, field: Dictionary) -> void:
+	var key: String = field.key
+	var value: Variant = values.get(key)
+	if field.has("auto") and (value == field.auto or (value == null and field.get("default") == field.auto)):
+		values[key] = field.auto
+		_select_value(option, _auto_shown.get(key, field.get("auto_shows")))
+		return
+	values[key] = _select_value(option, value, field.get("default"))
+
+
+## What a field with "auto" shows while its value is the auto value: the choice it stands for now
+## (an automatic operation's Join, Cut or New Body after a build). The value itself stays auto.
+func show_auto(key: String, shown: Variant) -> void:
+	if shown == null or str(shown) == "" or _auto_shown.get(key) == shown:
+		return
+	_auto_shown[key] = shown
+	for field in _fields:
+		if field.key == key and field.has("auto") and _editors.get(key) is OptionButton:
+			_show_choice(_editors[key], field)
+
+
+## The choice a field shows (its value, or for an auto value the choice it stands for), or null.
+func shown_choice(key: String) -> Variant:
+	var option := _editors.get(key) as OptionButton
+	if option == null or option.selected < 0:
+		return null
+	return option.get_item_metadata(option.selected)
+
+
 static func _select_value(option: OptionButton, value: Variant, fallback: Variant = null) -> Variant:
 	var wanted: Variant = fallback if value == null else value
 	var numbers := [TYPE_INT, TYPE_FLOAT]

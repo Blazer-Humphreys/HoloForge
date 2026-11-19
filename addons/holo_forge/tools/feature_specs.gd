@@ -456,8 +456,12 @@ static func _build() -> void:
 		flag("thin", "Thin Extrude"),
 		choice("thin_side", "Thin Side", [["inside", "Side 1 (inside)"], ["outside", "Side 2 (outside)"], ["center", "Center"]], "inside", {"thin": [true]}),
 		expr("thickness", "Thickness", _LEN, "1", {"thin": [true]}),
-	# "Join or New Body" (auto) is what a Press Pull on a profile makes; it edits as itself.
-	], "new_body", {"arrow": "distance", "ops": ["new_body", "join", "cut", "intersect", "new_component", "auto"]})
+	# The automatic operation (auto) is the default, and what a Press Pull on a profile makes: it joins
+	# the body the profile sits on, cuts it when pulled back past zero, or makes a new body when it
+	# touches none. The Operation list shows which of those it does; a choice picked there by hand
+	# stays (tools/command.gd operation_fields). The arrow goes both ways (a negative distance runs
+	# the other way).
+	], "auto", {"arrow": "distance", "arrow_signed": true, "ops": ["auto", "new_body", "join", "cut", "intersect", "new_component"]})
 	_add("revolve", "Revolve", [
 		pick("profiles", "Profiles", profile_kinds),
 		pick("axis", "Axis", ["axis"], true),

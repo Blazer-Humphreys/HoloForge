@@ -225,6 +225,10 @@ var _whole_result := {}
 var _baked_decals: Array = []
 ## True while the view shows bodies a command previewed (preview_bodies) instead of the rebuild's.
 var _bodies_previewed := false
+## The tool shape a Join or Cut command draws (_show_operation_preview), and its looks by operation.
+const OPERATION_PREVIEW_COLORS := {"join": Color(0.3, 0.85, 0.45, 0.4), "cut": Color(0.95, 0.32, 0.26, 0.4)}
+var _operation_preview_shape: Variant = null
+var _operation_preview_materials := {}
 ## Built analyses by entry id: {"input": {"type", "options"} as built, "built": ANALYSIS.build()
 ## output}, valid for _analysis_cache_result and the bodies in _analysis_cache_bodies.
 var _analysis_cache := {}
@@ -376,6 +380,7 @@ func _init() -> void:
 	picker = FEATURE_PICKER.new(self, viewport)
 	picker.kinds_provider = _active_kinds
 	picker.picked_provider = _picked_refs
+	viewport.outline_provider = _outlines_picks
 	picker.picked.connect(_on_reference_picked)
 	viewport.draw_handler = func(overlay: Control) -> void:
 		sketch_editor.draw(overlay)
@@ -1790,6 +1795,8 @@ func start_command(new_command: RefCounted, editing_feature: Resource = null) ->
 	else:
 		recompute()
 	panel.focus_first()
+	# (A command that outlines its picks, not tints them: the view shows its outlines at once.)
+	_update_highlights()
 	if _is_mesh_tool(command) and is_inside_tree():
 		# A Mesh panel may show no text field at first (Tessellate, Separate): the view then takes
 		# the keyboard, so Enter and Escape work without a click.
@@ -2075,8 +2082,10 @@ func _end_command() -> void:
 	_update_highlights()
 	if _is_inspect(ending):
 		ending.end()
-	elif _is_mesh_tool(ending):
+	else:
+		# (A Mesh tool's overlays, or a Join or Cut's tool shape.)
 		viewport.set_command_meshes([])
+		_operation_preview_shape = null
 	if sketch_editor.active:
 		sketch_editor.resume()
 	elif form_editor.active:
@@ -2178,6 +2187,12 @@ func _update_highlights() -> void:
 	viewport.set_highlights(picks, _mesh_hover if not _mesh_hover.is_empty() else hover)
 
 
+## Whether the open command wants faces outlined, not tinted (Texture Map Controls: the face's
+## texture stays in clear view).
+func _outlines_picks() -> bool:
+	return command != null and "outlines_picks" in command and bool(command.outlines_picks)
+
+
 ## The view selection as highlight picks: the picked items, and the Mesh selection's triangles.
 func _selection_picks() -> Array:
 	var picks: Array = selection.duplicate()
@@ -2253,7 +2268,18 @@ func _on_manipulator_changed(handle: Dictionary, value: Variant) -> void:
 			command_values[handle.key] = UNITS.format_value(float(value), UNITS.KIND_ANGLE, doc.units, 6)
 		"slide":
 			command_values[handle.key] = UNITS.format_value(float(value), UNITS.KIND_LENGTH, doc.units, 6)
-	if str(handle.type) != "point":
+		"scale":
+			# A uniform scale dot: each of its length fields becomes its base times the ratio.
+			var keys: Array = handle.get("keys", [])
+			var bases: Array = handle.get("bases", [])
+			for i in mini(keys.size(), bases.size()):
+				var was := str(command_values.get(keys[i], "")).strip_edges()
+				command_values[keys[i]] = UNITS.format_value(maxf(float(bases[i]) * float(value), float(handle.get("min", 0.0))), UNITS.KIND_LENGTH, doc.units)
+				if drag_replaced.has(keys[i]):
+					drag_replaced[keys[i]].now = str(command_values[keys[i]])
+				elif was != "" and not DIMENSION_LAYOUT.is_number(was):
+					drag_replaced[keys[i]] = {"was": was, "now": str(command_values[keys[i]])}
+	if not str(handle.type) in ["point", "scale"]:
 		# A field that held an expression ("width * 2"): the drag wrote a number over it.
 		if drag_replaced.has(handle.key):
 			drag_replaced[handle.key].now = str(command_values[handle.key])
@@ -2265,7 +2291,7 @@ func _on_manipulator_changed(handle: Dictionary, value: Variant) -> void:
 		command.dragging = true
 	command.write_values(doc, command_values)
 	# (The dragged value shows also in the field that has the keyboard: it was not typed there.)
-	panel.set_values(command_values, [handle.key])
+	panel.set_values(command_values, handle.get("keys", [handle.key]))
 	if _is_inspect(command):
 		# A drag changes only the command's values: the browser stays, and analyses whose inputs
 		# didn't change come from the cache.
@@ -2308,6 +2334,9 @@ func _update_command_feedback() -> void:
 		command.update()
 		_update_command_handles()
 		return
+	# An automatic operation shows in the Operation list as what it did (Join, Cut or New Body).
+	if command.feature != null:
+		panel.show_auto("operation", result.get("operations", {}).get(command.feature.id))
 	var hints := {}
 	for field in command.fields():
 		if field.type != "expression":
@@ -2340,7 +2369,41 @@ func _update_command_feedback() -> void:
 		_queue_mesh_panel_check(false)
 	else:
 		panel.set_hints(_with_drag_notes(hints))
+		_show_operation_preview()
 	_update_command_handles()
+
+
+## A Join's or Cut's tool shape (an Extrude's pulled piece) drawn over the bodies while its
+## command is open: green for what it adds, red for what it takes away. The rest of the body looks
+## as it always does.
+func _show_operation_preview() -> void:
+	var id := str(command.feature.id) if command != null and command.get("feature") != null else ""
+	var op := str(result.get("operations", {}).get(id, ""))
+	var shape: Variant = result.get("tool_shapes", {}).get(id)
+	if id == "" or result.get("errors", {}).has(id) or not OPERATION_PREVIEW_COLORS.has(op) or shape == null:
+		if _operation_preview_shape != null:
+			viewport.set_command_meshes([])
+			_operation_preview_shape = null
+		return
+	if is_same(shape, _operation_preview_shape):
+		return
+	_operation_preview_shape = shape
+	var mesh := TESSELLATE.surface_mesh(TESSELLATE.tessellate(shape))
+	viewport.set_command_meshes([{"mesh": mesh, "material": _operation_preview_material(op)}])
+
+
+func _operation_preview_material(op: String) -> StandardMaterial3D:
+	if not _operation_preview_materials.has(op):
+		var material := StandardMaterial3D.new()
+		material.albedo_color = OPERATION_PREVIEW_COLORS[op]
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		# (Over the body it joins, whose faces lie on its own, and seen through what it cuts.)
+		material.no_depth_test = true
+		material.render_priority = 1
+		_operation_preview_materials[op] = material
+	return _operation_preview_materials[op]
 
 
 ## hints with a note on each field whose expression a handle drag replaced (drag_replaced). A

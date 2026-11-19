@@ -626,7 +626,7 @@ func _check_texture_map_handles() -> void:
 	var by_key := {}
 	for handle in TEXTURE_MAP.handles(frame, mapping, 0.001):
 		by_key[handle.key] = handle
-	_expect(by_key.has_all(["scale_u", "scale_v", "rotation", "anchor"]) and not by_key.has("origin"), "Planar mapping should get two arrows, a turn dot and a point (%s)." % [by_key.keys()])
+	_expect(by_key.has_all(["scale_u", "scale_v", "scale_uv", "rotation", "anchor"]) and not by_key.has("origin"), "Planar mapping should get two arrows, a Scale dot, a Rotation ring and a point (%s)." % [by_key.keys()])
 	if not by_key.has_all(["scale_u", "rotation"]):
 		return
 	var arrow: Dictionary = by_key.scale_u
@@ -640,9 +640,14 @@ func _check_texture_map_handles() -> void:
 	var after := TEXTURE_MAP.surface_frame(shape, top, tess, stretched, frame.anchor)
 	_expect((stretched.scale as Vector2).is_equal_approx(Vector2(0.07, 0.05)) and not after.is_empty() and absf((after.u as Vector3).length() - 0.07) < 1e-6
 		and (after.u as Vector3).normalized().distance_to(u.normalized()) < 1e-6, "Dragging the U arrow 20 mm should make one repeat 70 mm along it (%s)." % [stretched])
+	if by_key.has("scale_uv"):
+		var dot: Dictionary = by_key.scale_uv
+		_expect(dot.type == "scale" and dot.keys == ["scale_u", "scale_v"] and absf(float(dot.bases[0]) - 0.05) < 1e-9 and absf(float(dot.bases[1]) - 0.05) < 1e-9
+			and absf(float(dot.radius) - 0.1) < 1e-9 and (dot.direction as Vector3).distance_to((u.normalized() + v.normalized()).normalized()) < 1e-6,
+			"The Scale dot should sit 100 px out between U and V, scaling both from 50 mm (%s)." % dot)
 	var turn: Dictionary = by_key.rotation
-	_expect(turn.type == "angle" and (turn.axis as Vector3).distance_to(Vector3.UP) < 1e-6 and float(turn.base) == 0.0 and absf((turn.start as Vector3).length() - 0.1) < 1e-6,
-		"The turn dot should sit 100 px out, turning about the face normal from the current rotation (%s)." % turn)
+	_expect(turn.type == "ring" and (turn.axis as Vector3).distance_to(Vector3.UP) < 1e-6 and float(turn.base) == 0.0 and float(turn.radius_px) == TEXTURE_MAP.RING_PX
+		and (turn.origin as Vector3).distance_to(frame.anchor) < 1e-9, "The Rotation ring should go round the anchor, turning about the face normal from the current rotation (%s)." % turn)
 	var alpha := 0.4
 	values = TEXTURE_MAP.values_from_mapping(stretched, "mm")
 	values[turn.key] = UNITS.format_value(float(turn.base) + alpha, UNITS.KIND_ANGLE, "mm")

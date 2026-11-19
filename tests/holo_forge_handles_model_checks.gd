@@ -417,7 +417,8 @@ static func _inspect(m, hook) -> void:
 		m.check(is_finite(tilt) and is_finite(spin) and absf(tilt) > 0.01 and absf(spin) > 0.01 and clip.distance_to(turned.z) < 1e-5,
 			"The clip plane should face the turned normal (%s vs %s; tilt %s, spin %s)." % [clip, turned.z, tilt, spin])
 		await ok_step(m, begun, "", "Section")
-	# Texture Map Controls on a red top face: the anchor, Scale U and V, the turn dot.
+	# Texture Map Controls on a red top face: the anchor, Scale U and V, the uniform Scale dot, the
+	# Rotation ring.
 	ws.run_action("appearance")
 	await m.frames(2)
 	var top := face(m, body, Vector3.UP)
@@ -461,9 +462,27 @@ static func _inspect(m, hook) -> void:
 	mapping = ws.doc.appearances[target].get("mapping", {})
 	m.check((mapping.get("scale", Vector2.ZERO) as Vector2).distance_to(Vector2(m.value_of("scale_u", "length"), m.value_of("scale_v", "length"))) < 1e-9 and is_finite(su) and is_finite(sv),
 		"The mapping's repeat should be the pulled scales (%s; %s, %s)." % [mapping.get("scale"), su, sv])
-	var turn := await pull_angle(m, "rotation", 28.0, "Texture turn dot turned")
+	# The uniform Scale dot pulled out: both repeats grow by the same ratio.
+	var dot: Dictionary = m.handle("scale_uv", "scale")
+	if m.check(not dot.is_empty(), "The uniform Scale dot should show (handles %s)." % [m.handle_keys()]):
+		var bases: Array = dot.bases
+		var r: Dictionary = await m.pull(dot, m.screen_along(dot) * 40.0)
+		if bool(r.get("ok", false)):
+			var ratio := float(r.value)
+			mapping = ws.doc.appearances[target].get("mapping", {})
+			var scale: Vector2 = mapping.get("scale", Vector2.ZERO)
+			m.check(ratio > 1.05 and absf(scale.x / float(bases[0]) - ratio) < 1e-4 and absf(scale.y / float(bases[1]) - ratio) < 1e-4,
+				"Pulling the Scale dot out should grow U and V by the same ratio (%s from %s, ratio %s)." % [scale, bases, ratio])
+	# The Rotation ring turned along its outline.
+	var ring: Dictionary = m.handle("rotation", "ring")
+	var turn := NAN
+	if m.check(not ring.is_empty(), "The Rotation ring should show (handles %s)." % [m.handle_keys()]):
+		var r: Dictionary = await m.pull(ring, m.ring_path(ring, 4))
+		if bool(r.get("ok", false)):
+			m.check_value("rotation", UNITS.KIND_ANGLE, float(r.value), "Texture Rotation ring turned", 6)
+			turn = m.value_of("rotation", UNITS.KIND_ANGLE)
 	mapping = ws.doc.appearances[target].get("mapping", {})
-	m.check(is_finite(turn) and absf(float(mapping.get("rotation", 0.0)) - m.value_of("rotation", "angle")) < 1e-9, "The texture should turn as far as the dot (%s vs %s)." % [mapping.get("rotation"), turn])
+	m.check(is_finite(turn) and absf(turn - float(ring.get("base", 0.0))) > 0.05 and absf(float(mapping.get("rotation", 0.0)) - turn) < 1e-9, "The texture should turn as far as the ring (%s vs %s)." % [mapping.get("rotation"), turn])
 	# A cylindrical projection's origin point.
 	await set_values(m, {"type": "cylindrical"})
 	ws.refresh_view()

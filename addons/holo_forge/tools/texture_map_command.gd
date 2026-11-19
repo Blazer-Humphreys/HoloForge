@@ -3,9 +3,11 @@ extends "res://addons/holo_forge/tools/inspect_command.gd"
 ## Texture Map Controls: the texture mapping of the appearance a picked face or body shows (the
 ## doc.appearances entry it actually reads: its own, its body's or its component's), as typed
 ## fields and as handles on the face: two arrows that stretch one texture repeat along the mapped
-## U and V directions, a dot that turns the texture about the surface, a point that slides the
-## texture along the surface (its offset) and, for round projections, the projection's center.
-## The view previews every change; OK keeps it as one undo step, Cancel puts it back.
+## U and V directions, a dot that scales U and V together, a ring round the gizmo that turns the
+## texture about the surface, a point that slides the texture along the surface (its offset) and,
+## for round projections, the projection's center. Picked faces are outlined, not tinted, so the
+## texture shows clearly. The view previews every change; OK keeps it as one undo step, Cancel
+## puts it back.
 ##
 ## The math is in static functions (panel values <-> mapping, the gizmo frame on a face, the
 ## handles, offset drags), so tests drive it without the editor. A frame is
@@ -32,14 +34,19 @@ const AXIS_OPTIONS := [
 ]
 ## The smallest repeat length a field or arrow can set (1 µm).
 const MIN_SCALE := 1e-6
-## How far from the gizmo's center the turn handle sits, and the arrows' length (as the view
-## draws them), in pixels.
-const TURN_RADIUS_PX := 100.0
+## How far from the gizmo's center the uniform Scale dot sits, the Rotation ring's radius and the
+## arrows' length (as the view draws them), in pixels.
+const SCALE_DOT_PX := 100.0
+const RING_PX := 135.0
 const ARROW_PX := 70.0
+## The smallest share of its size the Scale dot can shrink a repeat to in one drag.
+const MIN_RATIO := 0.01
 const TILE_COLOR := Color(0.95, 0.55, 0.15)
 
 ## The doc.appearances key being edited ("" when the pick shows no appearance).
 var target_key := ""
+## The workspace outlines picked faces instead of tinting them (the texture stays in clear view).
+var outlines_picks := true
 ## Where the gizmo sits (on the face); dragging its point handle moves it with the texture.
 var anchor := Vector3.ZERO
 ## Where the anchor handle's drag was last (the view's raw hit on the handle's plane), null between
@@ -499,9 +506,10 @@ static func surface_frame(shape: RefCounted, face_index: int, tess: Dictionary, 
 
 ## On-canvas handles for a frame (pixel: meters per screen pixel at the anchor): Scale U and V
 ## arrows along u and v (dragging one by d meters lengthens the repeat by d where the mapping is
-## true to size), the Rotation dot (dragging it round by an angle turns the texture as much), the
-## anchor point (slides the texture: write_values turns it into an offset) and, for round
-## projections, the origin.
+## true to size), the uniform Scale dot between them (dragging it out to k times its distance
+## from the anchor makes both repeats k times as long), the Rotation ring round the anchor
+## (turning it by an angle turns the texture as much), the anchor point (slides the texture:
+## write_values turns it into an offset) and, for round projections, the origin.
 static func handles(frame: Dictionary, mapping: Dictionary, pixel: float) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	if frame.is_empty():
@@ -515,10 +523,10 @@ static func handles(frame: Dictionary, mapping: Dictionary, pixel: float) -> Arr
 		var along: Vector3 = [u, v][i]
 		out.append({"type": "arrow", "key": ["scale_u", "scale_v"][i], "origin": at, "direction": along.normalized(),
 			"base": absf(scale[i]), "factor": absf(scale[i]) / maxf(along.length(), 1e-12), "min": MIN_SCALE})
-	var radius := TURN_RADIUS_PX * pixel
-	var start := (u.normalized() + v.normalized()).normalized()
-	out.append({"type": "angle", "key": "rotation", "origin": at, "axis": frame.turn_axis, "start": start * radius,
-		"radius": radius, "base": float(m.rotation)})
+	var diagonal := (u.normalized() + v.normalized()).normalized()
+	out.append({"type": "scale", "key": "scale_uv", "keys": ["scale_u", "scale_v"], "bases": [absf(scale.x), absf(scale.y)],
+		"origin": at, "direction": diagonal, "radius": SCALE_DOT_PX * pixel, "min_ratio": MIN_RATIO, "min": MIN_SCALE})
+	out.append({"type": "ring", "key": "rotation", "origin": at, "axis": frame.turn_axis, "radius_px": RING_PX, "base": float(m.rotation)})
 	out.append({"type": "point", "key": "anchor", "position": at, "normal": frame.normal})
 	if ROUND_TYPES.has(str(m.type)):
 		out.append({"type": "point", "key": "origin", "position": m.origin, "normal": round_axis(m)})

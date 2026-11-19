@@ -2275,7 +2275,7 @@ func _check_round2_press_pull() -> void:
 	var joined: Resource = solid_command.create_feature(doc, solid_values)
 	_rebuild()
 	_no_error(joined, "Press Pull on a profile in the Solid workspace")
-	_expect(joined.type == "extrude" and str(joined.options.get("operation", "")) == OPERATIONS.AUTO, "Press Pull in the Solid workspace should be a Join-or-New-Body extrude, joining what it touches (%s)." % joined.type)
+	_expect(joined.type == "extrude" and str(joined.options.get("operation", "")) == OPERATIONS.AUTO, "Press Pull in the Solid workspace should be an extrude with the automatic operation, joining what it touches (%s)." % joined.type)
 	_close(_volume(_body(cube)), 1500.0, 1e-6, "The Solid Press Pull joins the box (volume)")
 
 

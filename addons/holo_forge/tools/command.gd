@@ -64,14 +64,22 @@ func manipulators(_values: Dictionary, _evaluated: Dictionary) -> Array[Dictiona
 
 ## The operation and target-body fields shared by Create features (ops: the operations offered;
 ## all of them when empty; visible_if: when they show at all).
+## Auto among ops isn't a choice of its own: while the feature holds it, the list shows the
+## operation it does (Join, Cut or New Body; ui/command_panel.gd "auto", and the workspace's
+## show_auto from the rebuild's "operations"), and a choice picked by hand replaces it.
 static func operation_fields(ops: Array = [], visible_if: Dictionary = {}) -> Array[Dictionary]:
 	var options := []
 	for op in (ops if not ops.is_empty() else OPERATIONS.ALL):
-		options.append([op, OPERATIONS.LABELS[op]])
+		if op != OPERATIONS.AUTO:
+			options.append([op, OPERATIONS.LABELS[op]])
 	var targets_if := {"operation": [OPERATIONS.JOIN, OPERATIONS.CUT, OPERATIONS.INTERSECT]}
 	targets_if.merge(visible_if)
+	var operation := {"key": "operation", "label": "Operation", "type": "enum", "options": options, "visible_if": visible_if}
+	if ops.has(OPERATIONS.AUTO):
+		operation["auto"] = OPERATIONS.AUTO
+		operation["auto_shows"] = OPERATIONS.JOIN
 	return [
-		{"key": "operation", "label": "Operation", "type": "enum", "options": options, "visible_if": visible_if},
+		operation,
 		{"key": "targets", "label": "Bodies", "type": "selection", "filter": "body", "visible_if": targets_if},
 	]
 

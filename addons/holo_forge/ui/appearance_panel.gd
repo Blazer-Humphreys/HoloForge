@@ -12,6 +12,7 @@ extends PanelContainer
 const MATERIAL_LIBRARY := preload("res://addons/holo_forge/core/material_library.gd")
 const APPEARANCE := preload("res://addons/holo_forge/core/appearance.gd")
 const UNITS := preload("res://addons/holo_forge/core/units.gd")
+const NUMBER_DRAG := preload("res://addons/holo_forge/ui/number_drag.gd")
 const TEXTURE_MAP_COMMAND := "res://addons/holo_forge/tools/texture_map_command.gd"
 
 const ICON_SIZE := 32
@@ -130,18 +131,18 @@ func _init(p_workspace: Object = null) -> void:
 	_type.item_selected.connect(func(_index: int) -> void: _mapping_edited())
 	grid.add_child(_type)
 	_add_label(grid, "Scale")
-	_scale = _pair(grid, "Meters per texture repeat, U and V (document units)")
+	_scale = _pair(grid, "Meters per texture repeat, U and V (document units)", UNITS.KIND_LENGTH)
 	_add_label(grid, "Rotation")
 	_rotation = LineEdit.new()
-	_rotation.tooltip_text = "Degrees, counter-clockwise on the surface"
-	_connect_edit(_rotation)
+	_rotation.tooltip_text = "Degrees, counter-clockwise on the surface. Drag left or right to change it."
+	_connect_edit(_rotation, UNITS.KIND_ANGLE)
 	grid.add_child(_rotation)
 	_add_label(grid, "Offset")
-	_offset = _pair(grid, "Offset in texture repeats, U and V")
+	_offset = _pair(grid, "Offset in texture repeats, U and V", UNITS.KIND_NUMBER)
 	_add_label(grid, "Origin")
-	_origin = _edits(grid, ["X", "Y", "Z"], "The projection's center (document units)")
+	_origin = _edits(grid, ["X", "Y", "Z"], "The projection's center (document units)", UNITS.KIND_LENGTH)
 	_add_label(grid, "Axis")
-	_axis = _edits(grid, ["X", "Y", "Z"], "The projection's direction; 0, 0, 0 is automatic")
+	_axis = _edits(grid, ["X", "Y", "Z"], "The projection's direction; 0, 0, 0 is automatic", UNITS.KIND_NUMBER)
 	var children := grid.get_children()
 	for i in range(children.size() - 4, children.size()):
 		_placed_rows.append(children[i] as Control)
@@ -524,30 +525,37 @@ func _add_label(grid: GridContainer, text: String) -> void:
 	grid.add_child(label)
 
 
-func _pair(grid: GridContainer, tooltip: String) -> Array[LineEdit]:
-	return _edits(grid, ["U", "V"], tooltip)
+func _pair(grid: GridContainer, tooltip: String, kind: String) -> Array[LineEdit]:
+	return _edits(grid, ["U", "V"], tooltip, kind)
 
 
-## A row of line edits, one per name (tooltips "<name>: <tooltip>").
-func _edits(grid: GridContainer, names: Array, tooltip: String) -> Array[LineEdit]:
+## A row of line edits, one per name (tooltips "<name>: <tooltip>"), holding values of a kind.
+func _edits(grid: GridContainer, names: Array, tooltip: String, kind: String) -> Array[LineEdit]:
 	var row := HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var edits: Array[LineEdit] = []
 	for axis in names.size():
 		var edit := LineEdit.new()
-		edit.tooltip_text = str(names[axis]) + ": " + tooltip
+		edit.tooltip_text = str(names[axis]) + ": " + tooltip + ". Drag left or right to change it."
 		edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		edit.custom_minimum_size = Vector2(120.0 / names.size(), 0)
-		_connect_edit(edit)
+		_connect_edit(edit, kind)
 		row.add_child(edit)
 		edits.append(edit)
 	grid.add_child(row)
 	return edits
 
 
-func _connect_edit(edit: LineEdit) -> void:
+## Applies an editor's text on Enter and when it loses the keyboard; dragging it (ui/number_drag.gd)
+## changes the text as it goes and applies it, as one undo step, when the drag ends.
+func _connect_edit(edit: LineEdit, kind: String) -> void:
 	edit.text_submitted.connect(func(_text: String) -> void: _mapping_edited())
 	edit.focus_exited.connect(_mapping_edited)
+	var helper: RefCounted = NUMBER_DRAG.attach(edit, kind, func() -> String: return str(workspace.doc.units) if workspace != null and workspace.doc != null else "mm",
+		Callable(), {"bare": true})
+	helper.dragging_changed = func(active: bool) -> void:
+		if not active:
+			_mapping_edited()
 
 
 ## Keeps the panel inside a small view: the library list gives up height first.

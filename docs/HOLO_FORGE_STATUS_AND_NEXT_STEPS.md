@@ -31,6 +31,21 @@ This is a work order for whoever continues: you, or a future AI session. Read it
   - **Navigation:** the Orbit/Pan buttons no longer break picks.
   - **Dimensions:** they work and look like the other app's.
   - **Press Pull:** a profile Press Pull is now "Join or New Body", so it works in an empty design.
+- **Texture Map and number-field drags (2026-11-18, done, tested):**
+  - **Outlines:** Texture Map Controls outlines its picked or hovered faces instead of tinting them, so the texture stays in clear view.
+    - A command opts in with `outlines_picks`.
+    - The view asks through `outline_provider` and draws `_outlines` (`face_outlines()` is there for tests).
+  - **Handles:**
+    - The old turn dot is now a uniform **Scale** dot, handle type `"scale"`. It scales `scale_u` and `scale_v` together by the drag ratio.
+    - A **Rotation ring** (a `"ring"` handle with `radius_px` 135) goes around the anchor.
+  - **Number drags:** `ui/number_drag.gd` gives the Inspector-style left/right drag to every command-panel expression and point field, and to the Appearance panel's mapping fields.
+    - The Appearance panel applies a drag on release, as one undo step.
+    - Shift gives fine steps, Ctrl coarse ones.
+    - Fields marked `whole` step by whole numbers and respect a numeric `range`.
+    - The sketch's in-view dimension box is left as it was: it only applies on Enter.
+  - **Tests:**
+    - new: `tests/holo_forge_texture_view_test.gd`;
+    - updated: `holo_forge_appearance_test`, `holo_forge_inspect_editor_test`, `holo_forge_handles_model_checks` and `holo_forge_mouse.gd` (the `"scale"` grab, along and expected value).
 - **Phase 6 (Form workspace, subdivision freeform) is built.**
   - **Spec:** `docs/holo_forge/phase6_form_spec.md`.
   - **Native code:** `cad_subd.*`, `subd_convert.*`, `subd_bvh.*`.
@@ -451,6 +466,77 @@ This is a work order for whoever continues: you, or a future AI session. Read it
      - It found one test assumption, in `holo_forge_form_editor_fix_checks.gd` (window visibility used the camera's global position), and fixed it.
      - Backups from before the change are in scratchpad `backup_passthrough\`.
    - **Gate (2026-11-18, 15:21-15:54, sequential, normal mode):** 67/70 headless tests pass. The other three are the two window-only render tests, which pass windowed, and `mesh_save_faults`, whose 10 parse errors are its deliberate missing files. All 13 editor hooks pass, and all 4 windowed runs (background and passthrough render, Forward+ and Compatibility) pass with no engine errors. validate_project shows the known 6.
+
+13. **Signed Extrude, automatic Join/Cut, own faces unpickable (2026-11-18, the user asked: "extrusion should be able to go in to the negative values when pulling the arrow and typing, it should also automatically join to the body that it is extruded from. the faces that are being pulled shouldn't be interactable").** The user chose "Cut when negative".
+   - **Default operation.**
+     - Extrude now defaults to `OPERATIONS.AUTO`, labelled "Join, Cut or New Body" (`tools/feature_specs.gd`; spec flag `arrow_signed`). Press Pull on a profile already used Auto.
+     - `core/operations.gd`: Auto with no body touched gives a new body. Otherwise it gives Cut when `ctx.auto_cut == feature.id`, else Join. `ctx.auto_cut` is erased after each feature.
+     - `core/features/sketch_solid.gd extrude` sets `ctx.auto_cut` for a negative one-side Distance extent.
+     - The native kernel extrudes a negative distance as it is; no flip is needed.
+   - **Arrow:** `tools/feature_command.gd manipulators()` sets `min = -1e9` when the spec is signed. This also applies to Press Pull, except its fillet type, so the arrow drags past zero.
+   - **Own faces:** `ui/feature_picker.gd` adds `_own_tag()` (`"<command.feature.id>:"`), `_is_own_face` and `_is_own_ref`.
+     - `pick()` returns `{}` when `face_hit_at` lands on the open command's own face, so nothing behind it is picked either.
+     - `_body_pick` rejects the command's own face refs, and edge refs with either side face its own.
+     - Hover goes through `pick()`, so it is covered too.
+     - Window and lasso select are unchanged.
+   - **Test:** `tests/holo_forge_extrude_signed_test.gd` (headless, with real mouse and keys) covers:
+     - a typed -10 mm cut on a box top;
+     - an arrow dragged past zero, giving a cut;
+     - a +5 mm join;
+     - a new body in an empty design, and a negative one with nothing to cut going down;
+     - the preview cap not hovered, picked or clickable, and pickable again after OK;
+     - New Body overriding the cut.
+     
+     Gotcha: in a test, don't press Tab after typing a value. Focus moves to the Flip checkbox, and Enter then toggles it.
+   - Press Pull and surface tests now expect the new label. No other test needed a change.
+   - Backups are in the original session's scratchpad `backup_extrude\` and this session's `backup_tests\`.
+   - **Gate (2026-11-18, 16:17-17:15, sequential, while another session was editing the Texture Map and number-drag code in the same folder):**
+     - 68 of 71 headless tests pass. `extrude_signed` passes. `mesh_save_faults` passes with its 10 deliberate parse errors. The two window-only render tests fail headless, as they always do.
+     - `appearance` failed once against a half-edited Texture Map test and passed on a rerun.
+     - 11 of 13 hooks passed in the batch. `sketch-editor` (palette drags timed out) and `inspect-editor` (texture-map values in the middle of the other session's edit) pass when rerun alone, so all 13 pass.
+     - validate_project shows the known 6.
+   - **Follow-up the same day, the user asked:** "I would like when extruding to default to join. new body should be a section if you are extruding from the face of a body." This was read as: the list shows Join, and New Body stays a choice in it.
+     - The Operation list no longer offers the abstract "Join, Cut or New Body". The feature still stores `auto`, but the list shows the operation it does.
+     - `core/regen.gd` puts `result.operations` (feature id -> the operation applied) in every rebuild.
+     - `forge_workspace.gd _update_command_feedback` calls `panel.show_auto("operation", ...)`.
+     - In `tools/command.gd operation_fields`, an `auto` op becomes the field keys `auto` / `auto_shows` (Join before the first build).
+     - `ui/command_panel.gd _show_choice` keeps the auto value and selects the shown choice. `shown_choice(key)` reads it.
+     - A hand pick, including the item already shown (caught with the popup's `index_pressed`, since `item_selected` doesn't fire for it), stores that operation.
+     - `feature_command.gd write_values` sets `options.operation_by_hand`, so the old "a Press Pull saved as Join opens as Auto" conversion skips hand-picked Joins.
+     - Press Pull has no Operation list of its own; it stays automatic and shows the same list when edited from the timeline.
+     - Tests: `extrude_signed` gained the list checks:
+       - Join on the box, Cut once negative, New Body in an empty design;
+       - a picked New Body survives distance changes;
+       - a picked Join stays Join when negative and after reopening.
+
+       `press_pull` now expects "New Body" in its edit list.
+   - **Second follow-up, the user reported:** "be able to show that the body is being extruded when joining. it should be able to join at the surface its being extruded from." Their screenshot shows a face profile on Body1, 20548.5105 mm, Join, and "The join doesn't touch any solid body".
+     - **Cause:** `operations.gd participating()` grew the tool's AABB by a fixed 1e-7 m. AABB is float32, so for a tool 20 m long that starts on a -X or -Z face, `position + size` lands a few micrometres short of the face it starts on, and the box no longer counts as touched. Auto made a New Body; a Join failed.
+     - **Fix:** the margin is now `1e-7 + 1e-6 * the longer of the two boxes' longest sides`.
+     - It is unknown how the 20 m value was entered (arrow or number drag). The arrow itself sits on the face and points along its normal; the test checks both.
+     - **Preview:** `regen` adds `result.tool_shapes` (feature id -> tool shape, Join and Cut only). `forge_workspace.gd _show_operation_preview` draws it with `viewport.set_command_meshes`, which is cleared when any non-inspect command ends.
+       - Colours: green (0.3, 0.85, 0.45, 0.4) for Join, red (0.95, 0.32, 0.26, 0.4) for Cut.
+       - The material is unshaded and has `no_depth_test`, so the piece shows over the joined body's coplanar faces and through the body it cuts.
+       - A tool shape is tessellated once per new shape.
+     - **Tests:** `extrude_signed` gained:
+       - side-face profiles from +X/-X/-Z views at 10 mm, 20548.5105 mm and -10 mm (the cut), with the arrow on the face and along the normal;
+       - an arrow drag from the top face;
+       - the overlay: green on join, red on cut, none for New Body, gone after OK.
+     - Windowed screenshots: scratchpad `shots\join.png`, `cut.png` and `face_join.png` (the session in `575662c5`).
+   - **Gate after both follow-ups (2026-11-18, 17:36-18:12, sequential):**
+     - All 72 headless tests pass except the two window-only render tests. `mesh_save_faults` passes with its deliberate parse errors.
+     - All 13 editor hooks pass. A stale earlier gate run overlapped this one: its ui, form and mesh hooks failed under load, which doesn't count, and they pass in this run.
+     - validate_project shows the known 6.
+   - **Third follow-up (2026-11-18), the user reported:** "There is no arrow to push or pull extrusion." Their screenshot shows an Extrude of a face profile, 10000 mm, Join, with no arrow.
+     - **Cause:** `feature_command.gd _arrow_frame` found a face profile's face in the rebuilt model (`command.result`). A Join swallows that face and a Cut takes it away, so `find_face` returned -1 and no arrow was made, at any distance.
+     - The earlier test hid this: it checked the arrow only `if not arrow.is_empty()`.
+     - **Fix:** `regen` adds `result.profile_frames` (feature id -> {"origin": the profile's middle, "normal": its plane's normal before Flip}), which `sketch_solid.extrude` records from the model before the feature. For a face pick, `_arrow_frame` uses that frame first and the face lookup only when none was recorded (Offset Face, Press Pull's face offset).
+     - **Tests:** `extrude_signed` now requires the arrow on every face run (10 mm and after the long pull or the cut), starting on and within the face with its tip the distance out, and for the top-face drag. Against the old code it fails on all of these ("handles []").
+   - **Fourth follow-up (2026-11-18), the user reported:** "later extruded or cut faces cant be picked. if I cut material I can only select what that shape was previously." Their screenshot shows a stepped body with several cuts, all sketches shown, and a new Extrude with no profile.
+     - **Cause:** `feature_picker.gd _profile_at` lets a sketch profile beat any face behind it. A cut's sketch stays where it was drawn, in the air over the pocket, so a click into the pocket picked that old profile, not the cut's floor or walls.
+     - **Fix:** `refresh()` marks each profile entry with `used_by` (the features whose option lists hold a profile pick inside that region, `_note_used_profiles`). In `_profile_at`, a used profile in front of a hit face gives way to the face. It still wins when it lies on the face (within 1e-6 + 1e-6 x the distance), when no face is behind it, and when only the open command uses it.
+     - **Tests:** `extrude_signed _check_cut_faces_pickable`: a real click into a cut pocket picks the floor; that floor cuts 5 mm deeper (exact volume); the deeper floor and the first cut's wall pick; the top face around the pocket still picks; the cut's profile is marked as used. Against the old picker every pick check fails (it picks profile f2).
+     - Not done: faces selected before Extrude starts aren't taken into Profiles (the screenshot's "3 selected").
 
 **Optional small item:** heads-up length and angle fields while drawing lines. Its work order is `docs/holo_forge/heads_up_fields_work_order.md`. The full dimension spec is `docs/holo_forge/dimension_spec.md`.
 

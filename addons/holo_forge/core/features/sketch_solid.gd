@@ -51,6 +51,9 @@ static func extrude(feature: Resource, ctx: Dictionary, surface := false) -> Str
 		r.fail("Select a direction (an axis or plane): straight or twisted edges don't set one")
 	direction *= -1.0 if bool(r.opt("flip", false)) else 1.0
 	var center := _on_plane((profile.shape.bbox() as AABB).get_center(), plane)
+	if ctx.has("profile_frames"):
+		# (The profile's middle and its plane's normal, before Flip: feature_command.gd's arrow.)
+		ctx.profile_frames[feature.id] = {"origin": center, "normal": plane.basis.z.normalized()}
 	var start := 0.0
 	match str(r.opt("start", "profile")):
 		"offset":
@@ -84,6 +87,9 @@ static func extrude(feature: Resource, ctx: Dictionary, surface := false) -> Str
 	var taper := r.num("taper", 0.0)
 	if not r.ok():
 		return r.error
+	if d1 < 0.0 and str(r.opt("extent", "distance")) == "distance" and side == "one":
+		# Pulled back past zero: an automatic operation cuts what it goes into (core/operations.gd).
+		ctx["auto_cut"] = str(feature.id)
 	var shape: RefCounted = r.kernel.extrude(profile.shape, {
 		"direction": direction, "distance": d1, "distance2": d2, "taper": taper, "start_offset": start, "tag": feature.id,
 		"surface": surface,
