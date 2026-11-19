@@ -2,6 +2,8 @@
 
 Parametric CAD inside the Godot editor. Holo Forge adds a **Forge** tab next to 2D / 3D / Script, where you sketch with constraints and dimensions, model solids and surfaces, sculpt subdivision forms, edit meshes and build jointed assemblies. The parts end up in your game as ordinary baked meshes.
 
+![A part modeled in the Forge tab with Passthrough on, standing in its city scene; the blue faces are cut pockets](docs/holo_forge/screenshots/release_0_1_4/passthrough_city_cut.png)
+
 - **CAD kernel:** OpenCASCADE 8.0.1 for solids and surfaces, the planegcs constraint solver for sketches, OpenSubdiv for Form, plus Manifold, pmp and meshoptimizer for meshes. It runs as a C++ GDExtension.
 - **Workspaces:** Sketch, Solid, Construct, Inspect, Insert, Surface, Form, Mesh and Assemble.
 - **Output:** each body bakes as its own `MeshInstance3D` and each component as its own node, with optional collision and Godot joints. Exports to STEP, IGES, STL, OBJ, 3MF, GLB and `.tscn`.
